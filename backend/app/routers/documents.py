@@ -18,6 +18,13 @@ def register_document(
 ) -> DocumentOut:
     sb = get_supabase()
 
+    user_prefix = f"{user.id}/"
+    if not body.storage_path.startswith(user_prefix):
+        raise HTTPException(
+            status_code=403,
+            detail="Storage path must belong to the authenticated user.",
+        )
+
     # Pull bytes from storage so we can extract text now.
     try:
         file_bytes = sb.storage.from_(settings.documents_bucket).download(

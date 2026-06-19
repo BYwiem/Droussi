@@ -33,6 +33,7 @@ type FormValues = z.input<typeof schema>;
 interface Props {
   onSubmit: (spec: ExamSpec) => void | Promise<void>;
   submitting?: boolean;
+  disabled?: boolean;
 }
 
 function defaultPoints(count: number, total: number): { value: number }[] {
@@ -44,13 +45,12 @@ function defaultPoints(count: number, total: number): { value: number }[] {
   }));
 }
 
-export default function ExamSpecForm({ onSubmit, submitting }: Props) {
+export default function ExamSpecForm({ onSubmit, submitting, disabled }: Props) {
   const {
     register,
     control,
     handleSubmit,
     watch,
-    setValue,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -241,10 +241,10 @@ export default function ExamSpecForm({ onSubmit, submitting }: Props) {
 
       <button
         type="submit"
-        disabled={submitting}
+        disabled={submitting || disabled}
         className="w-full rounded-md bg-indigo-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-60"
       >
-        {submitting ? "Generating…" : "Generate exam"}
+        {submitting ? "Generating…" : disabled ? "Daily limit reached" : "Generate exam"}
       </button>
     </form>
   );

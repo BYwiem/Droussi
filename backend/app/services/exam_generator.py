@@ -6,6 +6,7 @@ from pydantic import ValidationError
 from ..models.schemas import ExamContent, ExamSpec
 from ..prompts.exam_prompt import SYSTEM_PROMPT, build_user_prompt
 from . import llm
+from . import usage as usage_service
 
 
 def _extract_json(text: str) -> str:
@@ -44,6 +45,7 @@ def _fix_points(content: ExamContent, spec: ExamSpec) -> ExamContent:
 
 async def generate_exam(
     *,
+    user_id: str,
     spec: ExamSpec,
     course_text: str,
     chat_history: list[dict[str, str]],
@@ -60,9 +62,13 @@ async def generate_exam(
 
     last_error: Exception | None = None
     for attempt in range(2):
+        usage_service.ensure_within_limit(user_id)
         try:
-            raw = await llm.chat(messages, response_format_json=True)
-            payload = json.loads(_extract_json(raw))
+            result = await llm.chat(
+                messages, response_format_json=True, max_tokens=2500
+            )
+            usage_service.record_usage(user_id, result.total_tokens)
+            payload = json.loads(_extract_json(result.content))
             content = ExamContent.model_validate(payload)
             if len(content.exercises) != spec.num_exercises:
                 raise ValueError(

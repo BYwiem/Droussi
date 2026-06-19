@@ -6,6 +6,7 @@ from ..auth import CurrentUser, get_current_user
 from ..db import get_supabase
 from ..models.schemas import ChatMessageOut, ChatPostRequest
 from ..services import llm
+from ..services import usage as usage_service
 
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -125,10 +126,15 @@ async def post_message(
     for m in history:
         messages.append({"role": m["role"], "content": m["content"]})
 
+    usage_service.ensure_within_limit(user.id)
+
     try:
-        reply = await llm.chat(messages, temperature=0.5, max_tokens=800)
+        result = await llm.chat(messages, temperature=0.5, max_tokens=800)
     except Exception as e:
         raise HTTPException(status_code=502, detail=f"LLM error: {e}") from e
+
+    usage_service.record_usage(user.id, result.total_tokens)
+    reply = result.content.strip()
 
     sb.table("chat_messages").insert(
         {
@@ -136,7 +142,7 @@ async def post_message(
             "scope": scope,
             "scope_id": scope_id,
             "role": "assistant",
-            "content": reply.strip(),
+            "content": reply,
         }
     ).execute()
 

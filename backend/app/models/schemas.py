@@ -94,3 +94,14 @@ class ChatMessageOut(BaseModel):
     role: Literal["user", "assistant"]
     content: str
     created_at: str
+
+
+class UsageOut(BaseModel):
+    tokens_used: int
+    tokens_limit: int
+    remaining: int
+    percent: float
+    user_count: int
+    total_limit: int
+    usage_date: str
+    resets_at: str

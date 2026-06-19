@@ -60,7 +60,7 @@ def build_user_prompt(
     )
 
     # cap to keep tokens manageable; free OpenRouter models have small context
-    max_chars = 18000
+    max_chars = 12000
     truncated = course_text[:max_chars]
     if len(course_text) > max_chars:
         truncated += "\n\n[... content truncated ...]"

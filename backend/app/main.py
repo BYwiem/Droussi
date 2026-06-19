@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .auth import CurrentUser, get_current_user
 from .config import get_settings
-from .routers import chat, documents, exams
+from .routers import chat, documents, exams, usage
 
 
 def create_app() -> FastAPI:
@@ -21,6 +21,7 @@ def create_app() -> FastAPI:
     app.include_router(documents.router)
     app.include_router(exams.router)
     app.include_router(chat.router)
+    app.include_router(usage.router)
 
     @app.get("/health")
     def health() -> dict[str, str]:

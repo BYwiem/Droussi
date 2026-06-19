@@ -1,3 +1,4 @@
+import asyncio
 import uuid
 from typing import Literal
 
@@ -11,6 +12,7 @@ from ..models.schemas import (
     GenerateExamRequest,
 )
 from ..services import exam_generator, exporter
+from ..services import usage as usage_service
 
 
 router = APIRouter(prefix="/api/exams", tags=["exams"])
@@ -32,8 +34,21 @@ def create_draft(
         .maybe_single()
         .execute()
     )
-    if not doc.data:
+    if not doc or not doc.data:
         raise HTTPException(status_code=404, detail="Document not found")
+
+    existing = (
+        sb.table("exams")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("document_id", document_id)
+        .eq("status", "pending")
+        .order("created_at", desc=True)
+        .limit(1)
+        .execute()
+    )
+    if existing.data:
+        return ExamOut.model_validate(existing.data[0])
 
     inserted = (
         sb.table("exams")
@@ -69,7 +84,7 @@ async def generate(
         .maybe_single()
         .execute()
     )
-    if not doc.data:
+    if not doc or not doc.data:
         raise HTTPException(status_code=404, detail="Document not found")
 
     course_text = doc.data.get("extracted_text") or ""
@@ -97,10 +112,27 @@ async def generate(
         {"spec": body.spec.model_dump(), "status": "generating"}
     ).eq("id", exam_id).eq("user_id", user.id).execute()
 
+    usage_service.ensure_within_limit(user.id)
+
     try:
-        content = await exam_generator.generate_exam(
-            spec=body.spec, course_text=course_text, chat_history=chat_history
+        content = await asyncio.wait_for(
+            exam_generator.generate_exam(
+                user_id=user.id,
+                spec=body.spec,
+                course_text=course_text,
+                chat_history=chat_history,
+            ),
+            timeout=180,
         )
+    except TimeoutError as e:
+        sb.table("exams").update({"status": "error"}).eq("id", exam_id).execute()
+        raise HTTPException(
+            status_code=504,
+            detail=(
+                "Exam generation timed out after 3 minutes. "
+                "Try again with fewer exercises or a shorter document."
+            ),
+        ) from e
     except Exception as e:
         sb.table("exams").update({"status": "error"}).eq("id", exam_id).execute()
         raise HTTPException(status_code=502, detail=f"Generation failed: {e}") from e

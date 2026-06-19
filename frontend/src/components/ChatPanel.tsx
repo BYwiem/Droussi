@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Send, Loader2 } from "lucide-react";
 import { apiFetch } from "../lib/api";
+import { useUsage } from "../hooks/useUsage";
 import type { ChatMessage } from "../types";
 
 interface Props {
@@ -13,7 +14,9 @@ export default function ChatPanel({ scope, scopeId }: Props) {
   const [input, setInput] = useState("");
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  const { atLimit, refresh } = useUsage();
 
   useEffect(() => {
     let cancelled = false;
@@ -34,18 +37,20 @@ export default function ChatPanel({ scope, scopeId }: Props) {
 
   async function send() {
     const content = input.trim();
-    if (!content || sending) return;
+    if (!content || sending || atLimit) return;
     setSending(true);
     setInput("");
+    setError(null);
     try {
       const updated = await apiFetch<ChatMessage[]>(
         `/api/chat/${scope}/${scopeId}`,
         { method: "POST", body: JSON.stringify({ content }) }
       );
       setMessages(updated);
+      await refresh();
     } catch (e) {
-      // restore input on failure
       setInput(content);
+      setError(e instanceof Error ? e.message : String(e));
       console.error(e);
     } finally {
       setSending(false);
@@ -84,6 +89,11 @@ export default function ChatPanel({ scope, scopeId }: Props) {
         ))}
         <div ref={endRef} />
       </div>
+      {atLimit && (
+        <p className="border-t border-amber-100 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Daily token limit reached. Your quota resets at midnight UTC.
+        </p>
+      )}
       <div className="flex items-end gap-2 border-t border-slate-200 p-3">
         <textarea
           value={input}
@@ -94,19 +104,23 @@ export default function ChatPanel({ scope, scopeId }: Props) {
               void send();
             }
           }}
-          placeholder="Type a message…"
+          placeholder={atLimit ? "Daily limit reached" : "Type a message…"}
           rows={2}
-          className="flex-1 resize-none rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none"
+          disabled={atLimit}
+          className="flex-1 resize-none rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-indigo-500 focus:outline-none disabled:bg-slate-50 disabled:text-slate-400"
         />
         <button
           onClick={() => void send()}
-          disabled={sending || !input.trim()}
+          disabled={sending || !input.trim() || atLimit}
           className="inline-flex items-center gap-1 rounded-md bg-indigo-600 px-3 py-2 text-sm font-medium text-white hover:bg-indigo-700 disabled:opacity-50"
         >
           {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           Send
         </button>
       </div>
+      {error && (
+        <p className="border-t border-slate-200 px-3 py-2 text-xs text-red-600">{error}</p>
+      )}
     </div>
   );
 }

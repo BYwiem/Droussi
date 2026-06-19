@@ -10,7 +10,16 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str
 
     openrouter_api_key: str
-    openrouter_model: str = "meta-llama/llama-3.3-70b-instruct:free"
+    openrouter_token_limit: int = 1_000_000
+    openrouter_model: str = "deepseek/deepseek-chat-v3-0324:free"
+    openrouter_fallback_models: str = (
+        "qwen/qwen3-235b-a22b:free,"
+        "mistralai/mistral-small-3.1-24b-instruct:free,"
+        "google/gemma-3-27b-it:free,"
+        "openrouter/free"
+    )
+    openrouter_request_timeout: int = 60
+    openrouter_max_model_attempts: int = 3
     openrouter_referer: str = "http://localhost:5173"
     openrouter_title: str = "Exam Generator"
 
@@ -20,7 +29,21 @@ class Settings(BaseSettings):
 
     @property
     def cors_origins(self) -> list[str]:
-        return [o.strip() for o in self.allowed_origins.split(",") if o.strip()]
+        origins: list[str] = []
+        for o in self.allowed_origins.split(","):
+            origin = o.strip().rstrip("/")
+            if origin and origin not in origins:
+                origins.append(origin)
+        return origins
+
+    @property
+    def openrouter_models(self) -> list[str]:
+        models: list[str] = []
+        for candidate in [self.openrouter_model, *self.openrouter_fallback_models.split(",")]:
+            model = candidate.strip()
+            if model and model not in models:
+                models.append(model)
+        return models
 
 
 @lru_cache

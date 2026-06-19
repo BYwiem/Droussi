@@ -2,10 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
-html, body, #root {
+@import "./styles/theme.css";
+
+html,
+body,
+#root {
   height: 100%;
 }
 
 body {
-  @apply bg-slate-50 text-slate-900 antialiased;
+  background-color: #ebf5ff;
+  color: #0a0d12;
+  font-family: "Inter", "Geist", system-ui, sans-serif;
+  @apply antialiased;
 }

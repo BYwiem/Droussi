@@ -56,3 +56,14 @@ export interface ChatMessage {
   content: string;
   created_at: string;
 }
+
+export interface UsageInfo {
+  tokens_used: number;
+  tokens_limit: number;
+  remaining: number;
+  percent: number;
+  user_count: number;
+  total_limit: number;
+  usage_date: string;
+  resets_at: string;
+}
