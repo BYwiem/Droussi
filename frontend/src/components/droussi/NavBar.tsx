@@ -1,5 +1,7 @@
 import { BookOpen, ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
+import { useLanguage } from "../../contexts/LanguageContext";
+import { createT } from "../../lib/i18n";
 import { UserInitialsAvatar } from "./UserInitialsAvatar";
 
 interface NavBarProps {
@@ -8,18 +10,22 @@ interface NavBarProps {
   onNavigate: (page: string) => void;
   onLogout: () => void;
   extra?: React.ReactNode;
+  isAdmin?: boolean;
 }
 
-export function NavBar({ user, currentPage, onNavigate, onLogout, extra }: NavBarProps) {
+export function NavBar({ user, currentPage, onNavigate, onLogout, extra, isAdmin }: NavBarProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const { lang, setLang } = useLanguage();
+  const t = createT(lang);
 
   const navLinks = [
-    { id: "dashboard", label: "Dashboard" },
-    { id: "upload", label: "Upload" },
-    { id: "exam", label: "Exam Generator" },
-    { id: "repository", label: "Repository" },
-    { id: "outputs", label: "My Outputs" },
+    { id: "dashboard", label: t("nav_dashboard") },
+    { id: "upload", label: t("nav_upload") },
+    { id: "exam", label: t("nav_exam") },
+    { id: "repository", label: t("nav_repository") },
+    { id: "outputs", label: t("nav_outputs") },
+    ...(isAdmin ? [{ id: "admin", label: "Admin" }] : []),
   ];
 
   return (
@@ -80,6 +86,40 @@ export function NavBar({ user, currentPage, onNavigate, onLogout, extra }: NavBa
 
         {/* Right side */}
         <div className="flex items-center gap-3">
+          {/* Language toggle */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              backgroundColor: "#f6f7f8",
+              borderRadius: 9999,
+              padding: 3,
+              gap: 2,
+            }}
+          >
+            {(["en", "fr"] as const).map((l) => (
+              <button
+                key={l}
+                onClick={() => setLang(l)}
+                style={{
+                  fontSize: 12,
+                  fontWeight: 600,
+                  padding: "4px 10px",
+                  borderRadius: 9999,
+                  border: "none",
+                  cursor: "pointer",
+                  backgroundColor: lang === l ? "#181d27" : "transparent",
+                  color: lang === l ? "#fff" : "#93979f",
+                  transition: "background-color 0.12s ease, color 0.12s ease",
+                  fontFamily: "'Geist','Inter',sans-serif",
+                  letterSpacing: "0.02em",
+                }}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
+
           {extra && <div className="hidden lg:block">{extra}</div>}
           {user ? (
             <div className="relative">
@@ -123,7 +163,7 @@ export function NavBar({ user, currentPage, onNavigate, onLogout, extra }: NavBa
                     className="w-full flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-[#f6f7f8] transition-colors text-left"
                   >
                     <LogOut size={14} color="#535862" />
-                    <span style={{ fontFamily: "'Geist','Inter',sans-serif", fontSize: 14, fontWeight: 500, color: "#535862" }}>Sign out</span>
+                    <span style={{ fontFamily: "'Geist','Inter',sans-serif", fontSize: 14, fontWeight: 500, color: "#535862" }}>{t("nav_signout")}</span>
                   </button>
                 </div>
               )}

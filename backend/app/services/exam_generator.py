@@ -48,32 +48,31 @@ async def generate_exam(
     user_id: str,
     spec: ExamSpec,
     course_text: str,
-    chat_history: list[dict[str, str]],
 ) -> ExamContent:
     spec.validate_consistency()
 
-    user_prompt = build_user_prompt(
-        spec=spec, course_text=course_text, chat_history=chat_history
-    )
+    user_prompt = build_user_prompt(spec=spec, course_text=course_text)
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
         {"role": "user", "content": user_prompt},
     ]
 
     last_error: Exception | None = None
+    cost_usd = 0.0  # accumulate across retries so we bill the true spend once
     for attempt in range(2):
-        usage_service.ensure_within_limit(user_id)
         try:
             result = await llm.chat(
                 messages, response_format_json=True, max_tokens=2500
             )
-            usage_service.record_usage(user_id, result.total_tokens)
+            cost_usd += result.cost_usd
             payload = json.loads(_extract_json(result.content))
             content = ExamContent.model_validate(payload)
             if len(content.exercises) != spec.num_exercises:
                 raise ValueError(
                     f"Expected {spec.num_exercises} exercises, got {len(content.exercises)}"
                 )
+            # One exam = one quota credit, billed with the full cost of all attempts.
+            usage_service.record_exam(user_id, cost_usd)
             return _fix_points(content, spec)
         except (json.JSONDecodeError, ValidationError, ValueError) as e:
             last_error = e
@@ -89,4 +88,7 @@ async def generate_exam(
             )
             continue
 
+    # All attempts failed: no exam credit consumed, but the spend still happened,
+    # so account for it in the global budget.
+    usage_service.record_cost(user_id, cost_usd)
     raise RuntimeError(f"Failed to generate a valid exam: {last_error}")

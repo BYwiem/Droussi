@@ -10,6 +10,12 @@ body,
   height: 100%;
 }
 
+/* Always reserve space for the scrollbar so its appearing/disappearing between
+   pages never changes the layout width — kills the sideways "shake". */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   background-color: #ebf5ff;
   color: #0a0d12;
@@ -33,34 +39,45 @@ body {
   }
 
   /* Split-and-stagger enter animation (Principle 5).
-     Add `mffb-stagger` to a container; its direct children fade up in turn. */
+     Add `mffb-stagger` to a container; its direct children fade up in turn.
+     Only opacity + transform animate (both GPU-composited) so it stays smooth;
+     short duration and tight stagger keep it feeling snappy, not heavy. */
   .mffb-stagger > * {
     opacity: 0;
-    animation: mffb-fade-in-up 0.5s cubic-bezier(0.2, 0, 0, 1) forwards;
+    animation: mffb-fade-in-up 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   }
   .mffb-stagger > *:nth-child(1) { animation-delay: 0ms; }
-  .mffb-stagger > *:nth-child(2) { animation-delay: 100ms; }
-  .mffb-stagger > *:nth-child(3) { animation-delay: 200ms; }
-  .mffb-stagger > *:nth-child(4) { animation-delay: 300ms; }
-  .mffb-stagger > *:nth-child(5) { animation-delay: 400ms; }
-  .mffb-stagger > *:nth-child(6) { animation-delay: 500ms; }
+  .mffb-stagger > *:nth-child(2) { animation-delay: 55ms; }
+  .mffb-stagger > *:nth-child(3) { animation-delay: 110ms; }
+  .mffb-stagger > *:nth-child(4) { animation-delay: 165ms; }
+  .mffb-stagger > *:nth-child(5) { animation-delay: 220ms; }
+  .mffb-stagger > *:nth-child(6) { animation-delay: 275ms; }
 
   /* Single-element enter — for content that mounts on a state change
      (e.g. a result card appearing) rather than a list. */
   .mffb-enter {
-    animation: mffb-fade-in-up 0.4s cubic-bezier(0.2, 0, 0, 1) both;
+    animation: mffb-fade-in-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Page transition — used when switching tabs. Opacity only (no movement) so
+     it never shifts layout or flashes the scrollbar; just a soft cross-fade. */
+  .mffb-page {
+    animation: mffb-fade-in 0.2s ease both;
+  }
+
+  @keyframes mffb-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
   }
 
   @keyframes mffb-fade-in-up {
     from {
       opacity: 0;
-      transform: translateY(12px);
-      filter: blur(4px);
+      transform: translate3d(0, 8px, 0);
     }
     to {
       opacity: 1;
-      transform: translateY(0);
-      filter: blur(0);
+      transform: translate3d(0, 0, 0);
     }
   }
 }
@@ -77,20 +94,23 @@ img {
    the element to its exit animation before it unmounts. */
 .mffb-backdrop {
   background-color: rgba(10, 13, 18, 0.4);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  animation: mffb-backdrop-in 0.25s ease forwards;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: mffb-backdrop-in 0.2s ease forwards;
 }
 .mffb-backdrop[data-closing="true"] {
-  animation: mffb-backdrop-out 0.2s ease forwards;
+  animation: mffb-backdrop-out 0.16s ease forwards;
 }
 
+/* Only opacity + transform animate (GPU-composited); the backdrop's blur is
+   static, never animated, so the pop-in/out stays smooth. */
 .mffb-modal {
-  animation: mffb-modal-in 0.3s cubic-bezier(0.2, 0, 0, 1) both;
+  will-change: transform, opacity;
+  animation: mffb-modal-in 0.24s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 /* Exit is softer than the enter (Principle 6): a small pop-out + fade. */
 .mffb-modal[data-closing="true"] {
-  animation: mffb-modal-out 0.18s ease-in forwards;
+  animation: mffb-modal-out 0.15s ease-in forwards;
 }
 
 @keyframes mffb-backdrop-in {
@@ -102,12 +122,12 @@ img {
   to { opacity: 0; }
 }
 @keyframes mffb-modal-in {
-  from { opacity: 0; transform: scale(0.92) translateY(8px); filter: blur(4px); }
-  to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+  from { opacity: 0; transform: scale(0.96) translate3d(0, 6px, 0); }
+  to { opacity: 1; transform: scale(1) translate3d(0, 0, 0); }
 }
 @keyframes mffb-modal-out {
-  from { opacity: 1; transform: scale(1) translateY(0); }
-  to { opacity: 0; transform: scale(0.96) translateY(-6px); }
+  from { opacity: 1; transform: scale(1) translate3d(0, 0, 0); }
+  to { opacity: 0; transform: scale(0.97) translate3d(0, -5px, 0); }
 }
 
 /* Respect reduced-motion: show/hide instantly, no transform animation. */

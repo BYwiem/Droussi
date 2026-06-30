@@ -1,6 +1,7 @@
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { UsageProvider } from "../hooks/useUsage";
+import { MeProvider, useMe } from "../hooks/useMe";
 import UsageGauge from "../components/UsageGauge";
 import { NavBar } from "../components/droussi/NavBar";
 import { toDisplayUser } from "../lib/userDisplay";
@@ -11,6 +12,7 @@ const PAGE_ROUTES: Record<string, string> = {
   exam: "/exam",
   repository: "/repository",
   outputs: "/outputs",
+  admin: "/admin",
 };
 
 function routeToPage(pathname: string): string {
@@ -19,13 +21,15 @@ function routeToPage(pathname: string): string {
   if (pathname.startsWith("/repository")) return "repository";
   if (pathname.startsWith("/outputs")) return "outputs";
   if (pathname.startsWith("/documents")) return "repository";
+  if (pathname.startsWith("/admin")) return "admin";
   return "dashboard";
 }
 
-export default function AppShell() {
+function AppShellInner() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAdmin } = useMe();
 
   if (!user) return null;
 
@@ -33,23 +37,32 @@ export default function AppShell() {
   const currentPage = routeToPage(location.pathname);
 
   return (
-    <UsageProvider>
-      <div
-        style={{
-          minHeight: "100vh",
-          backgroundColor: "#ebf5ff",
-          fontFamily: "'Geist','Inter',sans-serif",
-        }}
-      >
-        <NavBar
-          user={displayUser}
-          currentPage={currentPage}
-          onNavigate={(page) => navigate(PAGE_ROUTES[page] ?? "/dashboard")}
-          onLogout={() => void signOut()}
-          extra={<UsageGauge />}
-        />
-        <Outlet />
-      </div>
-    </UsageProvider>
+    <div
+      style={{
+        minHeight: "100vh",
+        backgroundColor: "#ebf5ff",
+        fontFamily: "'Geist','Inter',sans-serif",
+      }}
+    >
+      <NavBar
+        user={displayUser}
+        currentPage={currentPage}
+        isAdmin={isAdmin}
+        onNavigate={(page) => navigate(PAGE_ROUTES[page] ?? "/dashboard")}
+        onLogout={() => void signOut()}
+        extra={<UsageGauge />}
+      />
+      <Outlet />
+    </div>
+  );
+}
+
+export default function AppShell() {
+  return (
+    <MeProvider>
+      <UsageProvider>
+        <AppShellInner />
+      </UsageProvider>
+    </MeProvider>
   );
 }

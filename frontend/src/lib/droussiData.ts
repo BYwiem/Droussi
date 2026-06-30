@@ -137,8 +137,12 @@ export function buildExamSpec(params: {
   numMCQ: number;
   numShort: number;
   numEssay: number;
+  marksMCQ?: number;
+  marksShort?: number;
+  marksEssay?: number;
   exportFormat?: "pdf" | "docx";
   extraInstructions?: string;
+  language?: "en" | "fr";
 }): ExamSpec {
   const num = Math.max(1, params.numMCQ + params.numShort + params.numEssay);
   const types: ExamSpec["question_types"] = [];
@@ -146,19 +150,29 @@ export function buildExamSpec(params: {
   if (params.numShort + params.numEssay > 0) types.push("open");
   if (types.length === 0) types.push("mcq", "open");
 
-  const total = num * 4;
-  const base = Math.floor(total / num);
-  const remainder = total - base * num;
+  const mMCQ = Math.max(0, params.marksMCQ ?? 4);
+  const mShort = Math.max(0, params.marksShort ?? 4);
+  const mEssay = Math.max(0, params.marksEssay ?? 4);
+
+  // Order must match the prompt: MCQ first, then open-ended (short, then essay).
+  const perExercise = [
+    ...Array(params.numMCQ).fill(mMCQ),
+    ...Array(params.numShort).fill(mShort),
+    ...Array(params.numEssay).fill(mEssay),
+  ];
+  // Fallback if counts were all zero (num was clamped to 1).
+  if (perExercise.length === 0) perExercise.push(mMCQ || 4);
+
+  const total = perExercise.reduce((a, b) => a + b, 0);
 
   return {
     difficulty: params.difficulty,
     question_types: types,
     num_exercises: num,
     total_points: total,
-    per_exercise_points: Array.from({ length: num }, (_, i) =>
-      base + (i < remainder ? 1 : 0)
-    ),
+    per_exercise_points: perExercise,
     export_format: params.exportFormat ?? "pdf",
+    language: params.language ?? "en",
     extra_instructions: params.extraInstructions,
   };
 }

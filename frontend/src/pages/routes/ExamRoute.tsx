@@ -42,14 +42,19 @@ export default function ExamRoute() {
     numMCQ: number;
     numShort: number;
     numEssay: number;
+    marksMCQ: number;
+    marksShort: number;
+    marksEssay: number;
     difficulty: "easy" | "medium" | "hard";
+    language: "en" | "fr";
   }): Promise<GeneratedExamView> {
-    if (atLimit) throw new Error("Daily token limit reached. Try again after midnight UTC.");
-    const documentId = params.documentIds[0];
-    if (!documentId) throw new Error("Select at least one source document.");
+    if (atLimit) throw new Error("Daily exam limit reached. Try again after midnight UTC.");
+    if (!params.documentIds.length) throw new Error("Select at least one source document.");
+
+    const primaryId = params.documentIds[0];
 
     const draft = await apiFetch<{ id: string }>(
-      `/api/exams/draft?document_id=${documentId}`,
+      `/api/exams/draft?document_id=${primaryId}`,
       { method: "POST" }
     );
 
@@ -58,12 +63,20 @@ export default function ExamRoute() {
       numMCQ: params.numMCQ,
       numShort: params.numShort,
       numEssay: params.numEssay,
+      marksMCQ: params.marksMCQ,
+      marksShort: params.marksShort,
+      marksEssay: params.marksEssay,
       extraInstructions: params.examTitle,
+      language: params.language,
     });
 
     const exam = await apiFetch<ExamRow>(`/api/exams/${draft.id}/generate`, {
       method: "POST",
-      body: JSON.stringify({ document_id: documentId, spec }),
+      body: JSON.stringify({
+        document_id: primaryId,
+        document_ids: params.documentIds,
+        spec,
+      }),
       timeoutMs: 190_000,
     });
 

@@ -6,15 +6,17 @@ from pydantic import BaseModel, Field, field_validator
 Difficulty = Literal["easy", "medium", "hard"]
 QuestionType = Literal["mcq", "open"]
 ExportFormat = Literal["pdf", "docx"]
+Language = Literal["en", "fr"]
 
 
 class ExamSpec(BaseModel):
     difficulty: Difficulty
     question_types: list[QuestionType] = Field(min_length=1)
     num_exercises: int = Field(ge=1, le=20)
-    total_points: int = Field(ge=1, le=1000)
+    total_points: int = Field(ge=1, le=5000)
     per_exercise_points: list[int]
     export_format: ExportFormat
+    language: Language = "en"
     extra_instructions: Optional[str] = None
 
     @field_validator("per_exercise_points")
@@ -67,7 +69,30 @@ class ExamContent(BaseModel):
 
 class GenerateExamRequest(BaseModel):
     document_id: str
+    document_ids: Optional[list[str]] = None
     spec: ExamSpec
+
+
+class UpdateExamContentRequest(BaseModel):
+    """User edits to a generated exam. total_points is recomputed server-side
+    from the per-exercise points, so the client doesn't need to send it."""
+    title: str = Field(min_length=1)
+    exercises: list[Exercise] = Field(min_length=1)
+    export_format: Optional[ExportFormat] = None
+
+    @field_validator("exercises")
+    @classmethod
+    def _points_non_negative(cls, v: list[Exercise]) -> list[Exercise]:
+        if any(ex.points < 0 for ex in v):
+            raise ValueError("exercise points must be non-negative")
+        return v
+
+    def to_content(self) -> "ExamContent":
+        return ExamContent(
+            title=self.title,
+            total_points=sum(ex.points for ex in self.exercises),
+            exercises=self.exercises,
+        )
 
 
 class ExamOut(BaseModel):
@@ -83,25 +108,42 @@ class ExamOut(BaseModel):
     created_at: str
 
 
-class ChatPostRequest(BaseModel):
-    content: str
-
-
-class ChatMessageOut(BaseModel):
-    id: str
-    scope: Literal["document", "exam"]
-    scope_id: str
-    role: Literal["user", "assistant"]
-    content: str
-    created_at: str
-
-
 class UsageOut(BaseModel):
-    tokens_used: int
-    tokens_limit: int
+    exams_used: int
+    exams_limit: int
     remaining: int
     percent: float
-    user_count: int
-    total_limit: int
+    cost_usd_today: float
     usage_date: str
     resets_at: str
+
+
+class MeOut(BaseModel):
+    id: str
+    email: Optional[str] = None
+    is_admin: bool = False
+
+
+class AdminUserUsage(BaseModel):
+    user_id: str
+    email: Optional[str] = None
+    exams_today: int
+    exams_total: int
+    cost_usd_today: float
+    cost_usd_total: float
+
+
+class AdminOverviewOut(BaseModel):
+    user_count: int
+    exams_today: int
+    exams_total: int
+    cost_usd_today: float
+    cost_usd_total: float
+    per_user_exam_limit: int
+    global_daily_cost_limit_usd: float
+    # Live OpenRouter account credit status (None if it couldn't be fetched).
+    account_usage_usd: Optional[float] = None
+    account_limit_usd: Optional[float] = None
+    account_remaining_usd: Optional[float] = None
+    account_is_free_tier: Optional[bool] = None
+    rankings: list[AdminUserUsage]

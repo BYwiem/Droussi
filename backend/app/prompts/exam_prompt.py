@@ -28,15 +28,16 @@ Rules:
 - Sum of exercises[].points MUST exactly equal total_points.
 - Use ONLY the provided question types.
 - Questions must be answerable from the provided course content.
-- Write in English.
+- Write the entire exam (title, questions, answers, explanations) in the language specified in the user prompt.
 """
+
+_LANGUAGE_LABELS = {"en": "English", "fr": "French"}
 
 
 def build_user_prompt(
     *,
     spec: ExamSpec,
     course_text: str,
-    chat_history: list[dict[str, str]],
 ) -> str:
     types_label = " and ".join(
         {"mcq": "MCQ", "open": "open-ended"}[t] for t in spec.question_types
@@ -46,18 +47,13 @@ def build_user_prompt(
         for i, p in enumerate(spec.per_exercise_points)
     )
 
-    chat_block = ""
-    if chat_history:
-        rendered = "\n".join(
-            f"- {m['role']}: {m['content']}" for m in chat_history
-        )
-        chat_block = f"\n\nAdditional user instructions from chat:\n{rendered}"
-
     extra = (
         f"\n\nExtra instructions: {spec.extra_instructions}"
         if spec.extra_instructions
         else ""
     )
+
+    language_label = _LANGUAGE_LABELS.get(spec.language, "English")
 
     # cap to keep tokens manageable; free OpenRouter models have small context
     max_chars = 12000
@@ -72,7 +68,9 @@ Question types allowed: {types_label}
 Number of exercises: {spec.num_exercises}
 Total points: {spec.total_points}
 Points per exercise: {points_breakdown}
-Export format (for your awareness, not the JSON): {spec.export_format}{extra}{chat_block}
+Order the exercises so that all MCQ exercises come first, followed by the open-ended ones, matching the points-per-exercise list above.
+Output language: {language_label} (write ALL text — title, questions, answers, explanations — in {language_label})
+Export format (for your awareness, not the JSON): {spec.export_format}{extra}
 
 Course content:
 \"\"\"

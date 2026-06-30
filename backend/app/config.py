@@ -10,7 +10,13 @@ class Settings(BaseSettings):
     supabase_jwt_secret: str
 
     openrouter_api_key: str
-    openrouter_token_limit: int = 1_000_000
+    # Fixed daily exam quota PER USER (does not shrink as more users join).
+    per_user_exam_limit: int = 30
+    # Account-wide safety cap: stop all generation once total spend for the
+    # current UTC day reaches this many USD. Protects the shared credit pool.
+    global_daily_cost_limit_usd: float = 5.0
+    # Comma-separated emails allowed to view the super-admin dashboard.
+    super_admin_emails: str = ""
     openrouter_model: str = "deepseek/deepseek-chat-v3-0324:free"
     openrouter_fallback_models: str = (
         "qwen/qwen3-235b-a22b:free,"
@@ -35,6 +41,14 @@ class Settings(BaseSettings):
             if origin and origin not in origins:
                 origins.append(origin)
         return origins
+
+    @property
+    def super_admins(self) -> list[str]:
+        return [
+            e.strip().lower()
+            for e in self.super_admin_emails.split(",")
+            if e.strip()
+        ]
 
     @property
     def openrouter_models(self) -> list[str]:

@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Download } from "lucide-react";
+import { ArrowLeft, Download, Pencil } from "lucide-react";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
 import { apiFetch } from "../lib/api";
 import ExamPreview from "../components/ExamPreview";
-import type { ExamRow } from "../types";
+import ExamEditor from "../components/ExamEditor";
+import type { ExamRow, Exercise } from "../types";
 
 const pageStyle = {
   backgroundColor: "#ebf5ff",
@@ -18,6 +19,9 @@ export default function ExamView() {
   const { user } = useAuth();
   const [exam, setExam] = useState<ExamRow | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id || !user) return;
@@ -37,6 +41,25 @@ export default function ExamView() {
     if (!exam) return;
     const { url } = await apiFetch<{ url: string }>(`/api/exams/${exam.id}/download`);
     window.open(url, "_blank");
+  }
+
+  async function saveEdits(content: { title: string; exercises: Exercise[] }) {
+    if (!exam) return;
+    setSaving(true);
+    setSaveError(null);
+    try {
+      const updated = await apiFetch<ExamRow>(`/api/exams/${exam.id}/content`, {
+        method: "PUT",
+        body: JSON.stringify(content),
+        timeoutMs: 60_000,
+      });
+      setExam(updated);
+      setEditing(false);
+    } catch (e) {
+      setSaveError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setSaving(false);
+    }
   }
 
   if (notFound) {
@@ -65,27 +88,52 @@ export default function ExamView() {
           >
             <ArrowLeft size={16} /> Back to outputs
           </Link>
-          {exam.status === "ready" && exam.export_path && (
-            <button
-              onClick={() => void download()}
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 6,
-                backgroundColor: "#181d27",
-                color: "#fff",
-                borderRadius: 9999,
-                padding: "8px 16px",
-                fontSize: 13,
-                fontWeight: 600,
-                border: "none",
-                cursor: "pointer",
-              }}
-            >
-              <Download size={16} /> Download {exam.export_format?.toUpperCase()}
-            </button>
+          {exam.content && !editing && (
+            <div style={{ display: "inline-flex", gap: 8 }}>
+              <button
+                onClick={() => { setSaveError(null); setEditing(true); }}
+                style={{
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: 6,
+                  backgroundColor: "#fff",
+                  color: "#535862",
+                  borderRadius: 9999,
+                  padding: "8px 16px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  border: "1px solid rgba(83,88,98,0.25)",
+                  cursor: "pointer",
+                }}
+              >
+                <Pencil size={15} /> Edit
+              </button>
+              {exam.status === "ready" && exam.export_path && (
+                <button
+                  onClick={() => void download()}
+                  style={{
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: 6,
+                    backgroundColor: "#181d27",
+                    color: "#fff",
+                    borderRadius: 9999,
+                    padding: "8px 16px",
+                    fontSize: 13,
+                    fontWeight: 600,
+                    border: "none",
+                    cursor: "pointer",
+                  }}
+                >
+                  <Download size={16} /> Download {exam.export_format?.toUpperCase()}
+                </button>
+              )}
+            </div>
           )}
         </div>
+        {saveError && (
+          <p style={{ fontSize: 13, color: "#e05a00", marginBottom: 12 }}>{saveError}</p>
+        )}
         {exam.content ? (
           <div
             style={{
@@ -95,7 +143,16 @@ export default function ExamView() {
               padding: 24,
             }}
           >
-            <ExamPreview exam={exam.content} />
+            {editing ? (
+              <ExamEditor
+                exam={exam.content}
+                saving={saving}
+                onSave={(content) => void saveEdits(content)}
+                onCancel={() => setEditing(false)}
+              />
+            ) : (
+              <ExamPreview exam={exam.content} />
+            )}
           </div>
         ) : (
           <p style={{ fontSize: 14, color: "#93979f" }}>

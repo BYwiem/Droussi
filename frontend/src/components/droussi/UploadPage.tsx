@@ -1,5 +1,7 @@
 import { CheckCircle, File, FileText, Loader2, Trash2, Upload, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useLanguage } from "../../contexts/LanguageContext";
+import { createT } from "../../lib/i18n";
 
 export interface UploadedFile {
   id: string;
@@ -16,27 +18,14 @@ interface UploadPageProps {
   existingFiles: UploadedFile[];
   loading?: boolean;
   onFilesUploaded: () => void;
-  onUploadFile?: (
-    file: File,
-    meta: { subject: string; tags: string[] }
-  ) => Promise<UploadedFile>;
+  onUploadFile?: (file: File, meta: { subject: string; tags: string[] }) => Promise<UploadedFile>;
   onDeleteFile?: (id: string) => Promise<void>;
   onGoToExam?: () => void;
 }
 
 const SUBJECTS = [
-  "Mathematics",
-  "Biology",
-  "Chemistry",
-  "Physics",
-  "History",
-  "Geography",
-  "Literature",
-  "Computer Science",
-  "Arabic",
-  "French",
-  "English",
-  "General",
+  "Mathematics", "Biology", "Chemistry", "Physics", "History",
+  "Geography", "Literature", "Computer Science", "Arabic", "French", "English", "General",
 ];
 
 function formatBytes(bytes: number) {
@@ -46,40 +35,19 @@ function formatBytes(bytes: number) {
 }
 
 function FileIcon({ ext }: { ext: string }) {
-  const colors: Record<string, string> = {
-    pdf: "#f26110",
-    docx: "#0069e0",
-    doc: "#0069e0",
-    pptx: "#e05a00",
-    txt: "#535862",
-  };
+  const colors: Record<string, string> = { pdf: "#f26110", docx: "#0069e0", doc: "#0069e0", pptx: "#e05a00", txt: "#535862" };
   const color = colors[ext] || "#535862";
   return (
-    <div
-      style={{
-        width: 40,
-        height: 40,
-        borderRadius: 10,
-        backgroundColor: color + "20",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        flexShrink: 0,
-      }}
-    >
+    <div style={{ width: 40, height: 40, borderRadius: 10, backgroundColor: color + "20", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
       <FileText size={18} color={color} />
     </div>
   );
 }
 
-export function UploadPage({
-  existingFiles,
-  loading,
-  onFilesUploaded,
-  onUploadFile,
-  onDeleteFile,
-  onGoToExam,
-}: UploadPageProps) {
+export function UploadPage({ existingFiles, loading, onFilesUploaded, onUploadFile, onDeleteFile, onGoToExam }: UploadPageProps) {
+  const { lang } = useLanguage();
+  const t = createT(lang);
+
   const [files, setFiles] = useState<UploadedFile[]>(existingFiles);
   const [dragOver, setDragOver] = useState(false);
   const [selectedSubject, setSelectedSubject] = useState("");
@@ -92,19 +60,18 @@ export function UploadPage({
   useEffect(() => {
     setFiles((prev) => {
       const inFlight = prev.filter((f) => f.status === "uploading");
-      const inFlightIds = new Set(inFlight.map((f) => f.id));
       const merged = [
         ...existingFiles,
         ...inFlight.filter((f) => !existingFiles.some((e) => e.id === f.id)),
       ];
-      return merged.length > 0 || inFlightIds.size > 0 ? merged : existingFiles;
+      return merged.length > 0 || inFlight.length > 0 ? merged : existingFiles;
     });
   }, [existingFiles]);
 
   const handleFiles = (fileList: FileList | null) => {
     if (!fileList) return;
     if (!selectedSubject) {
-      setUploadError("Select a subject before uploading.");
+      setUploadError(t("up_error_subject"));
       return;
     }
     setUploadError(null);
@@ -134,11 +101,7 @@ export function UploadPage({
           onFilesUploaded();
         } catch (e) {
           setUploadError(e instanceof Error ? e.message : String(e));
-          setFiles((prev) =>
-            prev.map((file) =>
-              file.id === pending.id ? { ...file, status: "error", progress: 0 } : file
-            )
-          );
+          setFiles((prev) => prev.map((file) => file.id === pending.id ? { ...file, status: "error", progress: 0 } : file));
         }
       })();
     });
@@ -184,137 +147,36 @@ export function UploadPage({
   const doneCount = files.filter((f) => f.status === "done").length;
 
   return (
-    <div
-      style={{
-        backgroundColor: "#ebf5ff",
-        minHeight: "calc(100vh - 64px)",
-        fontFamily: "'Geist','Inter',sans-serif",
-      }}
-      className="px-4 py-10"
-    >
-      <div style={{ maxWidth: 800, margin: "0 auto" }} className="mffb-stagger">
+    <div style={{ backgroundColor: "#ebf5ff", minHeight: "calc(100vh - 64px)", fontFamily: "'Geist','Inter',sans-serif" }} className="px-4 py-10">
+      <div style={{ maxWidth: 800, margin: "0 auto" }} className="mffb-page">
         <div className="mb-8">
-          <h1
-            style={{
-              fontFamily: "'Inter',sans-serif",
-              fontSize: 28,
-              fontWeight: 700,
-              color: "#0a0d12",
-              letterSpacing: "-0.04em",
-            }}
-          >
-            Upload Materials
-          </h1>
-          <p style={{ fontSize: 14, color: "#93979f", marginTop: 6, letterSpacing: "-0.01em" }}>
-            Upload PDF lessons or notes, tag them by subject, then generate exams
-          </p>
+          <h1 style={{ fontFamily: "'Inter',sans-serif", fontSize: 28, fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em" }}>{t("up_title")}</h1>
+          <p style={{ fontSize: 14, color: "#93979f", marginTop: 6, letterSpacing: "-0.01em" }}>{t("up_desc")}</p>
         </div>
 
-        <div
-          style={{
-            backgroundColor: "#fafdff",
-            borderRadius: 24,
-            border: "1px solid rgba(83,88,98,0.12)",
-            padding: 28,
-            marginBottom: 20,
-          }}
-        >
-          <h3
-            style={{
-              fontSize: 15,
-              fontWeight: 600,
-              color: "#0a0d12",
-              letterSpacing: "-0.02em",
-              marginBottom: 16,
-            }}
-          >
-            Material details
-          </h3>
+        <div style={{ backgroundColor: "#fafdff", borderRadius: 24, border: "1px solid rgba(83,88,98,0.12)", padding: 28, marginBottom: 20 }}>
+          <h3 style={{ fontSize: 15, fontWeight: 600, color: "#0a0d12", letterSpacing: "-0.02em", marginBottom: 16 }}>{t("up_material_details")}</h3>
           <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
-              <label
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "#535862",
-                  letterSpacing: "-0.01em",
-                  display: "block",
-                  marginBottom: 8,
-                }}
-              >
-                Subject
-              </label>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#535862", letterSpacing: "-0.01em", display: "block", marginBottom: 8 }}>{t("up_subject")}</label>
               <select
                 value={selectedSubject}
                 onChange={(e) => setSelectedSubject(e.target.value)}
-                style={{
-                  width: "100%",
-                  padding: "10px 14px",
-                  borderRadius: 12,
-                  border: "1px solid rgba(83,88,98,0.2)",
-                  backgroundColor: "#f6f7f8",
-                  fontSize: 14,
-                  color: selectedSubject ? "#0a0d12" : "#93979f",
-                  fontFamily: "'Geist','Inter',sans-serif",
-                  fontWeight: 500,
-                  outline: "none",
-                  cursor: "pointer",
-                }}
+                style={{ width: "100%", padding: "10px 14px", borderRadius: 12, border: "1px solid rgba(83,88,98,0.2)", backgroundColor: "#f6f7f8", fontSize: 14, color: selectedSubject ? "#0a0d12" : "#93979f", fontFamily: "'Geist','Inter',sans-serif", fontWeight: 500, outline: "none", cursor: "pointer" }}
               >
-                <option value="">Select a subject…</option>
-                {SUBJECTS.map((s) => (
-                  <option key={s} value={s}>
-                    {s}
-                  </option>
-                ))}
+                <option value="">{t("up_subject_placeholder")}</option>
+                {SUBJECTS.map((s) => (<option key={s} value={s}>{s}</option>))}
               </select>
             </div>
             <div>
-              <label
-                style={{
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "#535862",
-                  letterSpacing: "-0.01em",
-                  display: "block",
-                  marginBottom: 8,
-                }}
-              >
-                Tags <span style={{ fontWeight: 400, color: "#93979f" }}>(optional)</span>
+              <label style={{ fontSize: 12, fontWeight: 600, color: "#535862", letterSpacing: "-0.01em", display: "block", marginBottom: 8 }}>
+                {t("up_tags")} <span style={{ fontWeight: 400, color: "#93979f" }}>{t("up_tags_optional")}</span>
               </label>
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: 6,
-                  padding: "8px 12px",
-                  borderRadius: 12,
-                  border: "1px solid rgba(83,88,98,0.2)",
-                  backgroundColor: "#f6f7f8",
-                  minHeight: 42,
-                }}
-              >
-                {tags.map((t) => (
-                  <span
-                    key={t}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 4,
-                      backgroundColor: "#cce7ff",
-                      borderRadius: 9999,
-                      padding: "2px 10px",
-                      fontSize: 12,
-                      fontWeight: 500,
-                      color: "#0069e0",
-                    }}
-                  >
-                    {t}
-                    <button
-                      type="button"
-                      onClick={() => setTags((prev) => prev.filter((x) => x !== t))}
-                      style={{ background: "none", border: "none", cursor: "pointer", lineHeight: 1 }}
-                    >
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6, padding: "8px 12px", borderRadius: 12, border: "1px solid rgba(83,88,98,0.2)", backgroundColor: "#f6f7f8", minHeight: 42 }}>
+                {tags.map((tag) => (
+                  <span key={tag} style={{ display: "flex", alignItems: "center", gap: 4, backgroundColor: "#cce7ff", borderRadius: 9999, padding: "2px 10px", fontSize: 12, fontWeight: 500, color: "#0069e0" }}>
+                    {tag}
+                    <button type="button" onClick={() => setTags((prev) => prev.filter((x) => x !== tag))} style={{ background: "none", border: "none", cursor: "pointer", lineHeight: 1 }}>
                       <X size={10} color="#0069e0" />
                     </button>
                   </span>
@@ -324,17 +186,8 @@ export function UploadPage({
                   onChange={(e) => setTagInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), addTag())}
                   onBlur={() => tagInput.trim() && addTag()}
-                  placeholder={tags.length ? "Add another…" : "e.g. Chapter 3, Midterm…"}
-                  style={{
-                    border: "none",
-                    background: "none",
-                    outline: "none",
-                    fontSize: 12,
-                    color: "#0a0d12",
-                    minWidth: 70,
-                    flex: 1,
-                    fontFamily: "'Geist','Inter',sans-serif",
-                  }}
+                  placeholder={tags.length ? t("up_tags_add") : t("up_tags_placeholder")}
+                  style={{ border: "none", background: "none", outline: "none", fontSize: 12, color: "#0a0d12", minWidth: 70, flex: 1, fontFamily: "'Geist','Inter',sans-serif" }}
                 />
               </div>
             </div>
@@ -342,192 +195,70 @@ export function UploadPage({
         </div>
 
         <div
-          onDragOver={(e) => {
-            e.preventDefault();
-            setDragOver(true);
-          }}
+          onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
           onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setDragOver(false);
-            handleFiles(e.dataTransfer.files);
-          }}
+          onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFiles(e.dataTransfer.files); }}
           onClick={() => fileInputRef.current?.click()}
-          style={{
-            backgroundColor: dragOver ? "#cce7ff" : "#fafdff",
-            borderRadius: 24,
-            border: `2px dashed ${dragOver ? "#0069e0" : "rgba(83,88,98,0.25)"}`,
-            padding: "48px 32px",
-            textAlign: "center",
-            cursor: selectedSubject ? "pointer" : "not-allowed",
-            opacity: selectedSubject ? 1 : 0.65,
-            transition: "background-color 0.18s ease, border-color 0.18s ease, opacity 0.18s ease",
-            marginBottom: 20,
-          }}
+          style={{ backgroundColor: dragOver ? "#cce7ff" : "#fafdff", borderRadius: 24, border: `2px dashed ${dragOver ? "#0069e0" : "rgba(83,88,98,0.25)"}`, padding: "48px 32px", textAlign: "center", cursor: selectedSubject ? "pointer" : "not-allowed", opacity: selectedSubject ? 1 : 0.65, transition: "background-color 0.18s ease, border-color 0.18s ease, opacity 0.18s ease", marginBottom: 20 }}
         >
-          <div
-            style={{
-              width: 56,
-              height: 56,
-              borderRadius: 18,
-              backgroundColor: "#cce7ff",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 16px",
-            }}
-          >
+          <div style={{ width: 56, height: 56, borderRadius: 18, backgroundColor: "#cce7ff", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 16px" }}>
             <Upload size={24} color="#0069e0" />
           </div>
-          <p
-            style={{
-              fontSize: 15,
-              fontWeight: 600,
-              color: "#0a0d12",
-              letterSpacing: "-0.02em",
-              marginBottom: 6,
-            }}
-          >
-            {selectedSubject ? "Drop PDFs here or click to browse" : "Select a subject first"}
+          <p style={{ fontSize: 15, fontWeight: 600, color: "#0a0d12", letterSpacing: "-0.02em", marginBottom: 6 }}>
+            {selectedSubject ? t("up_drop_ready") : t("up_drop_disabled")}
           </p>
-          <p style={{ fontSize: 13, color: "#93979f" }}>PDF only — up to ~20 MB each</p>
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept=".pdf,application/pdf"
-            onChange={(e) => handleFiles(e.target.files)}
-            style={{ display: "none" }}
-            disabled={!selectedSubject}
-          />
+          <p style={{ fontSize: 13, color: "#93979f" }}>{t("up_drop_hint")}</p>
+          <input ref={fileInputRef} type="file" multiple accept=".pdf,application/pdf" onChange={(e) => handleFiles(e.target.files)} style={{ display: "none" }} disabled={!selectedSubject} />
         </div>
 
         {uploadError && (
-          <p
-            style={{
-              fontSize: 13,
-              color: "#e05a00",
-              marginBottom: 16,
-              padding: "10px 14px",
-              backgroundColor: "#fff2be",
-              borderRadius: 12,
-            }}
-          >
-            {uploadError}
-          </p>
+          <p style={{ fontSize: 13, color: "#e05a00", marginBottom: 16, padding: "10px 14px", backgroundColor: "#fff2be", borderRadius: 12 }}>{uploadError}</p>
         )}
 
         {loading && files.length === 0 && (
-          <div
-            style={{
-              backgroundColor: "#fafdff",
-              borderRadius: 24,
-              border: "1px solid rgba(83,88,98,0.12)",
-              padding: 32,
-              textAlign: "center",
-            }}
-          >
+          <div style={{ backgroundColor: "#fafdff", borderRadius: 24, border: "1px solid rgba(83,88,98,0.12)", padding: 32, textAlign: "center" }}>
             <Loader2 size={24} color="#0069e0" className="animate-spin mx-auto mb-3" />
-            <p style={{ fontSize: 14, color: "#93979f" }}>Loading your materials…</p>
+            <p style={{ fontSize: 14, color: "#93979f" }}>{t("up_loading")}</p>
           </div>
         )}
 
         {!loading && files.length === 0 && (
-          <div
-            style={{
-              backgroundColor: "#fafdff",
-              borderRadius: 24,
-              border: "1px solid rgba(83,88,98,0.12)",
-              padding: 32,
-              textAlign: "center",
-            }}
-          >
-            <p style={{ fontSize: 15, fontWeight: 600, color: "#0a0d12", marginBottom: 4 }}>
-              No materials yet
-            </p>
-            <p style={{ fontSize: 13, color: "#93979f" }}>
-              Choose a subject above, then upload your first PDF
-            </p>
+          <div style={{ backgroundColor: "#fafdff", borderRadius: 24, border: "1px solid rgba(83,88,98,0.12)", padding: 32, textAlign: "center" }}>
+            <p style={{ fontSize: 15, fontWeight: 600, color: "#0a0d12", marginBottom: 4 }}>{t("up_no_materials")}</p>
+            <p style={{ fontSize: 13, color: "#93979f" }}>{t("up_no_materials_hint")}</p>
           </div>
         )}
 
         {files.length > 0 && (
-          <div
-            style={{
-              backgroundColor: "#fafdff",
-              borderRadius: 24,
-              border: "1px solid rgba(83,88,98,0.12)",
-              overflow: "hidden",
-            }}
-          >
+          <div style={{ backgroundColor: "#fafdff", borderRadius: 24, border: "1px solid rgba(83,88,98,0.12)", overflow: "hidden" }}>
             <div style={{ padding: "16px 20px", borderBottom: "1px solid rgba(83,88,98,0.08)" }}>
               <span style={{ fontSize: 13, fontWeight: 600, color: "#535862" }}>
-                {doneCount} uploaded · {files.length} total
+                {doneCount} {lang === "fr" ? "téléversé(s)" : "uploaded"} · {files.length} total
               </span>
             </div>
             {files.map((file, i) => (
               <div
                 key={file.id}
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 14,
-                  padding: "14px 20px",
-                  borderBottom: i < files.length - 1 ? "1px solid rgba(83,88,98,0.07)" : "none",
-                }}
+                style={{ display: "flex", alignItems: "center", gap: 14, padding: "14px 20px", borderBottom: i < files.length - 1 ? "1px solid rgba(83,88,98,0.07)" : "none" }}
               >
                 <FileIcon ext={file.type} />
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 500,
-                      color: "#0a0d12",
-                      letterSpacing: "-0.01em",
-                      overflow: "hidden",
-                      textOverflow: "ellipsis",
-                      whiteSpace: "nowrap",
-                    }}
-                  >
-                    {file.name}
-                  </p>
+                  <p style={{ fontSize: 14, fontWeight: 500, color: "#0a0d12", letterSpacing: "-0.01em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{file.name}</p>
                   <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 12, color: "#93979f" }}>{formatBytes(file.size)}</span>
                     <span style={{ fontSize: 12, color: "#93979f" }}>·</span>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        fontWeight: 600,
-                        color: "#0069e0",
-                        backgroundColor: "#cce7ff",
-                        borderRadius: 9999,
-                        padding: "1px 8px",
-                      }}
-                    >
-                      {file.subject}
-                    </span>
-                    {file.tags.map((t) => (
-                      <span
-                        key={t}
-                        style={{
-                          fontSize: 11,
-                          color: "#535862",
-                          backgroundColor: "#f6f7f8",
-                          borderRadius: 9999,
-                          padding: "1px 8px",
-                        }}
-                      >
-                        {t}
-                      </span>
+                    <span style={{ fontSize: 11, fontWeight: 600, color: "#0069e0", backgroundColor: "#cce7ff", borderRadius: 9999, padding: "1px 8px" }}>{file.subject}</span>
+                    {file.tags.map((tag) => (
+                      <span key={tag} style={{ fontSize: 11, color: "#535862", backgroundColor: "#f6f7f8", borderRadius: 9999, padding: "1px 8px" }}>{tag}</span>
                     ))}
                     {file.status === "uploading" && (
                       <>
                         <Loader2 size={12} color="#0069e0" className="animate-spin" />
-                        <span style={{ fontSize: 12, color: "#0069e0", fontWeight: 500 }}>Uploading…</span>
+                        <span style={{ fontSize: 12, color: "#0069e0", fontWeight: 500 }}>{lang === "fr" ? "Téléversement…" : "Uploading…"}</span>
                       </>
                     )}
                     {file.status === "error" && (
-                      <span style={{ fontSize: 12, color: "#e05a00", fontWeight: 500 }}>Upload failed</span>
+                      <span style={{ fontSize: 12, color: "#e05a00", fontWeight: 500 }}>{lang === "fr" ? "Échec du téléversement" : "Upload failed"}</span>
                     )}
                   </div>
                 </div>
@@ -535,26 +266,12 @@ export function UploadPage({
                   {file.status === "done" && <CheckCircle size={16} color="#1aa06d" />}
                   <button
                     type="button"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeFile(file.id);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); removeFile(file.id); }}
                     disabled={deletingId === file.id}
-                    style={{
-                      background: "none",
-                      border: "none",
-                      cursor: deletingId === file.id ? "wait" : "pointer",
-                      padding: 4,
-                      borderRadius: 8,
-                      opacity: deletingId === file.id ? 0.5 : 1,
-                    }}
+                    style={{ background: "none", border: "none", cursor: deletingId === file.id ? "wait" : "pointer", padding: 4, borderRadius: 8, opacity: deletingId === file.id ? 0.5 : 1 }}
                     className="hover:bg-[#f6f7f8]"
                   >
-                    {deletingId === file.id ? (
-                      <Loader2 size={14} color="#93979f" className="animate-spin" />
-                    ) : (
-                      <Trash2 size={14} color="#93979f" />
-                    )}
+                    {deletingId === file.id ? <Loader2 size={14} color="#93979f" className="animate-spin" /> : <Trash2 size={14} color="#93979f" />}
                   </button>
                 </div>
               </div>
@@ -567,25 +284,12 @@ export function UploadPage({
             <button
               type="button"
               onClick={onGoToExam}
-              style={{
-                backgroundColor: "#181d27",
-                color: "#fff",
-                borderRadius: 9999,
-                padding: "12px 28px",
-                fontSize: 14,
-                fontWeight: 500,
-                letterSpacing: "-0.01em",
-                border: "none",
-                cursor: "pointer",
-                display: "flex",
-                alignItems: "center",
-                gap: 8,
-              }}
+              style={{ backgroundColor: "#181d27", color: "#fff", borderRadius: 9999, padding: "12px 28px", fontSize: 14, fontWeight: 500, letterSpacing: "-0.01em", border: "none", cursor: "pointer", display: "flex", alignItems: "center", gap: 8 }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#2d3444")}
               onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#181d27")}
             >
               <File size={16} />
-              Generate exam from uploaded files
+              {t("up_go_exam")}
             </button>
           </div>
         )}

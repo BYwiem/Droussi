@@ -3,7 +3,6 @@ import { Link, useParams } from "react-router-dom";
 import { FilePlus2, ArrowLeft } from "lucide-react";
 import { supabase, DOCUMENTS_BUCKET } from "../lib/supabase";
 import { useAuth } from "../hooks/useAuth";
-import ChatPanel from "../components/ChatPanel";
 import type { DocumentRow } from "../types";
 
 const pageStyle = {
@@ -96,24 +95,21 @@ export default function DocumentView() {
         >
           {doc.filename}
         </h1>
-        <div className="grid gap-6 lg:grid-cols-2">
-          <div
-            style={{
-              overflow: "hidden",
-              borderRadius: 24,
-              border: "1px solid rgba(83,88,98,0.12)",
-              backgroundColor: "#fafdff",
-            }}
-          >
-            {previewUrl ? (
-              <iframe title="document preview" src={previewUrl} className="h-[500px] w-full" />
-            ) : (
-              <div className="flex h-[500px] items-center justify-center text-sm text-slate-500">
-                No preview available.
-              </div>
-            )}
-          </div>
-          <ChatPanel scope="document" scopeId={doc.id} />
+        <div
+          style={{
+            overflow: "hidden",
+            borderRadius: 24,
+            border: "1px solid rgba(83,88,98,0.12)",
+            backgroundColor: "#fafdff",
+          }}
+        >
+          {previewUrl ? (
+            <iframe title="document preview" src={previewUrl} className="h-[600px] w-full" />
+          ) : (
+            <div className="flex h-[600px] items-center justify-center text-sm text-slate-500">
+              No preview available.
+            </div>
+          )}
         </div>
       </div>
     </div>

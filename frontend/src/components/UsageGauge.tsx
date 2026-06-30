@@ -1,11 +1,5 @@
 import { useUsage } from "../hooks/useUsage";
 
-function formatTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return String(n);
-}
-
 function barColor(percent: number): string {
   if (percent >= 90) return "#f26110";
   if (percent >= 70) return "#bb9915";
@@ -46,12 +40,12 @@ export default function UsageGauge() {
         minWidth: 160,
         boxShadow: "rgba(4,69,144,0.06) 0px 4px 12px",
       }}
-      title={`Daily tokens: ${usage.tokens_used.toLocaleString()} / ${usage.tokens_limit.toLocaleString()}. Resets at ${formatResetTime(usage.resets_at)} UTC.`}
+      title={`Exams today: ${usage.exams_used} / ${usage.exams_limit}. Resets at ${formatResetTime(usage.resets_at)} UTC.`}
     >
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11, color: "#93979f" }}>
-        <span style={{ fontWeight: 600, color: "#535862" }}>Daily usage</span>
+        <span style={{ fontWeight: 600, color: "#535862" }}>Exams today</span>
         <span style={{ fontWeight: 600, color: atLimit ? "#f26110" : "#535862", fontVariantNumeric: "tabular-nums" }}>
-          {formatTokens(usage.tokens_used)} / {formatTokens(usage.tokens_limit)}
+          {usage.exams_used} / {usage.exams_limit}
         </span>
       </div>
       <div

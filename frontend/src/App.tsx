@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
+import { LanguageProvider } from "./contexts/LanguageContext";
 import AppShell from "./layouts/AppShell";
 import LandingRoute from "./pages/routes/LandingRoute";
 import LoginRoute from "./pages/routes/LoginRoute";
@@ -8,6 +9,7 @@ import UploadRoute from "./pages/routes/UploadRoute";
 import ExamRoute from "./pages/routes/ExamRoute";
 import RepositoryRoute from "./pages/routes/RepositoryRoute";
 import OutputsRoute from "./pages/routes/OutputsRoute";
+import AdminRoute from "./pages/routes/AdminRoute";
 import DocumentView from "./pages/DocumentView";
 import ExamBuilder from "./pages/ExamBuilder";
 import ExamView from "./pages/ExamView";
@@ -37,6 +39,7 @@ function Protected({ children }: { children: JSX.Element }) {
 
 export default function App() {
   return (
+    <LanguageProvider>
     <Routes>
       <Route path="/" element={<LandingRoute />} />
       <Route path="/login" element={<LoginRoute />} />
@@ -52,11 +55,13 @@ export default function App() {
         <Route path="/exam" element={<ExamRoute />} />
         <Route path="/repository" element={<RepositoryRoute />} />
         <Route path="/outputs" element={<OutputsRoute />} />
+        <Route path="/admin" element={<AdminRoute />} />
         <Route path="/documents/:id" element={<DocumentView />} />
         <Route path="/documents/:id/build" element={<ExamBuilder />} />
         <Route path="/exams/:id" element={<ExamView />} />
       </Route>
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </LanguageProvider>
   );
 }

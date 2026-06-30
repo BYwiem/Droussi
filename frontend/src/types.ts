@@ -9,6 +9,7 @@ export interface ExamSpec {
   total_points: number;
   per_exercise_points: number[];
   export_format: ExportFormat;
+  language?: "en" | "fr";
   extra_instructions?: string;
 }
 
@@ -48,22 +49,42 @@ export interface ExamRow {
   created_at: string;
 }
 
-export interface ChatMessage {
-  id: string;
-  scope: "document" | "exam";
-  scope_id: string;
-  role: "user" | "assistant";
-  content: string;
-  created_at: string;
-}
-
 export interface UsageInfo {
-  tokens_used: number;
-  tokens_limit: number;
+  exams_used: number;
+  exams_limit: number;
   remaining: number;
   percent: number;
-  user_count: number;
-  total_limit: number;
+  cost_usd_today: number;
   usage_date: string;
   resets_at: string;
+}
+
+export interface MeInfo {
+  id: string;
+  email: string | null;
+  is_admin: boolean;
+}
+
+export interface AdminUserUsage {
+  user_id: string;
+  email: string | null;
+  exams_today: number;
+  exams_total: number;
+  cost_usd_today: number;
+  cost_usd_total: number;
+}
+
+export interface AdminOverview {
+  user_count: number;
+  exams_today: number;
+  exams_total: number;
+  cost_usd_today: number;
+  cost_usd_total: number;
+  per_user_exam_limit: number;
+  global_daily_cost_limit_usd: number;
+  account_usage_usd: number | null;
+  account_limit_usd: number | null;
+  account_remaining_usd: number | null;
+  account_is_free_tier: boolean | null;
+  rankings: AdminUserUsage[];
 }

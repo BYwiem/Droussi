@@ -11,6 +11,7 @@ from ..config import get_settings
 logger = logging.getLogger(__name__)
 
 OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
+OPENROUTER_KEY_URL = "https://openrouter.ai/api/v1/key"
 
 # Only retry if the server says we can retry within this many seconds.
 # A larger Retry-After means a daily/long-term quota — don't burn time waiting.
@@ -19,11 +20,46 @@ _MAX_RETRIES = 1
 
 
 @dataclass(frozen=True)
+class KeyStatus:
+    """OpenRouter account/key status. limit/usage are in USD credits;
+    a null limit means pay-as-you-go (no hard cap)."""
+    usage_usd: float
+    limit_usd: float | None
+    limit_remaining_usd: float | None
+    is_free_tier: bool
+
+
+async def get_key_status() -> KeyStatus | None:
+    """Fetch live credit usage for the configured OpenRouter key. Returns None
+    if the call fails (the dashboard degrades gracefully)."""
+    s = get_settings()
+    headers = {"Authorization": f"Bearer {s.openrouter_api_key}"}
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(OPENROUTER_KEY_URL, headers=headers)
+            r.raise_for_status()
+            data = (r.json() or {}).get("data") or {}
+    except (httpx.HTTPError, ValueError) as e:
+        logger.warning("Could not fetch OpenRouter key status: %s", e)
+        return None
+
+    limit = data.get("limit")
+    remaining = data.get("limit_remaining")
+    return KeyStatus(
+        usage_usd=float(data.get("usage") or 0.0),
+        limit_usd=None if limit is None else float(limit),
+        limit_remaining_usd=None if remaining is None else float(remaining),
+        is_free_tier=bool(data.get("is_free_tier")),
+    )
+
+
+@dataclass(frozen=True)
 class ChatResult:
     content: str
     prompt_tokens: int
     completion_tokens: int
     total_tokens: int
+    cost_usd: float
 
 
 def _parse_result(payload: dict[str, Any]) -> ChatResult:
@@ -34,11 +70,15 @@ def _parse_result(payload: dict[str, Any]) -> ChatResult:
     total_tokens = int(
         usage.get("total_tokens") or (prompt_tokens + completion_tokens)
     )
+    # With {"usage": {"include": true}} OpenRouter returns the actual USD cost
+    # of the call in usage.cost (credits == USD). Falls back to 0 if absent.
+    cost_usd = float(usage.get("cost") or 0.0)
     return ChatResult(
         content=content,
         prompt_tokens=prompt_tokens,
         completion_tokens=completion_tokens,
         total_tokens=total_tokens,
+        cost_usd=cost_usd,
     )
 
 
@@ -99,6 +139,8 @@ async def chat(
         "messages": messages,
         "temperature": temperature,
         "max_tokens": max_tokens,
+        # Ask OpenRouter to return the real USD cost of each call in usage.cost.
+        "usage": {"include": True},
     }
     if response_format_json:
         body["response_format"] = {"type": "json_object"}

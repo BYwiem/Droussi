@@ -1,5 +1,7 @@
 import { Calendar, Clock, Download, Eye, FileText, Search, Sparkles, X } from "lucide-react";
 import { useState } from "react";
+import { useLanguage } from "../../contexts/LanguageContext";
+import { createT, type TKey } from "../../lib/i18n";
 
 interface ExamOutput {
   id: string;
@@ -28,15 +30,7 @@ const SUBJECT_COLORS: Record<string, { bg: string; color: string }> = {
   Literature: { bg: "#f6f7f8", color: "#535862" },
 };
 
-function PreviewModal({ exam, onClose }: { exam: ExamOutput; onClose: () => void }) {
-  const SAMPLE_QUESTIONS = [
-    "What is the primary site of photosynthesis in plant cells?",
-    "Explain the role of chlorophyll in photosynthesis.",
-    "Describe the light-dependent and light-independent reactions.",
-    "What is the chemical equation for photosynthesis?",
-    "True or False: Photosynthesis produces oxygen as a byproduct.",
-  ];
-
+function PreviewModal({ exam, onClose, t }: { exam: ExamOutput; onClose: () => void; t: (k: TKey) => string }) {
   return (
     <div
       style={{ position: "fixed", inset: 0, backgroundColor: "rgba(10,13,18,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 24 }}
@@ -44,19 +38,19 @@ function PreviewModal({ exam, onClose }: { exam: ExamOutput; onClose: () => void
     >
       <div
         className="mffb-enter"
-        style={{ backgroundColor: "#fafdff", borderRadius: 32, maxWidth: 640, width: "100%", maxHeight: "85vh", overflowY: "auto", boxShadow: "rgba(4,69,144,0.2) 0px 24px 48px 8px" }}
+        style={{ backgroundColor: "#fafdff", borderRadius: 32, maxWidth: 540, width: "100%", maxHeight: "85vh", overflowY: "auto", boxShadow: "rgba(4,69,144,0.2) 0px 24px 48px 8px" }}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal header */}
         <div style={{ background: "linear-gradient(135deg, #479dff 11%, #0069e0 78%)", padding: "28px 28px 24px", borderRadius: "32px 32px 0 0" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
-              <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>Exam Preview</p>
+              <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{t("out_preview_label")}</p>
               <h2 style={{ fontFamily: "'Inter',sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", letterSpacing: "-0.03em" }}>{exam.title}</h2>
               <div style={{ display: "flex", gap: 16, marginTop: 12 }}>
                 <span style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", display: "flex", alignItems: "center", gap: 4 }}><Clock size={12} />{exam.duration} min</span>
                 <span style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", display: "flex", alignItems: "center", gap: 4 }}><FileText size={12} />{exam.questions} questions</span>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", display: "flex", alignItems: "center", gap: 4 }}><Sparkles size={12} />{exam.totalMarks} marks</span>
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.8)", display: "flex", alignItems: "center", gap: 4 }}><Sparkles size={12} />{exam.totalMarks} pts</span>
               </div>
             </div>
             <button onClick={onClose} style={{ backgroundColor: "rgba(255,255,255,0.15)", border: "none", borderRadius: "50%", width: 32, height: 32, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -65,29 +59,18 @@ function PreviewModal({ exam, onClose }: { exam: ExamOutput; onClose: () => void
           </div>
         </div>
 
-        {/* Sample questions */}
-        <div style={{ padding: "24px" }}>
-          <p style={{ fontSize: 12, fontWeight: 600, color: "#93979f", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 14 }}>Sample Questions</p>
-          {SAMPLE_QUESTIONS.slice(0, exam.questions).map((q, i) => (
-            <div key={i} style={{ display: "flex", gap: 12, padding: "12px 0", borderBottom: i < Math.min(exam.questions, SAMPLE_QUESTIONS.length) - 1 ? "1px solid rgba(83,88,98,0.08)" : "none" }}>
-              <span style={{ width: 24, height: 24, borderRadius: 8, backgroundColor: "#f6f7f8", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 11, fontWeight: 700, color: "#535862", flexShrink: 0 }}>{i + 1}</span>
-              <p style={{ fontSize: 14, color: "#0a0d12", letterSpacing: "-0.01em", lineHeight: 1.5 }}>{q}</p>
-            </div>
-          ))}
-
-          {/* Download row */}
-          <div style={{ marginTop: 24, display: "flex", gap: 10, justifyContent: "flex-end" }}>
-            {exam.formats.includes("pdf") && (
-              <button style={{ display: "flex", alignItems: "center", gap: 6, backgroundColor: "#f26110", color: "#fff", borderRadius: 9999, padding: "10px 20px", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
-                <Download size={14} /> Download PDF
-              </button>
-            )}
-            {exam.formats.includes("docx") && (
-              <button style={{ display: "flex", alignItems: "center", gap: 6, backgroundColor: "#0069e0", color: "#fff", borderRadius: 9999, padding: "10px 20px", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
-                <Download size={14} /> Download DOCX
-              </button>
-            )}
-          </div>
+        {/* Download row */}
+        <div style={{ padding: "24px", display: "flex", gap: 10, justifyContent: "flex-end" }}>
+          {exam.formats.includes("pdf") && (
+            <button style={{ display: "flex", alignItems: "center", gap: 6, backgroundColor: "#f26110", color: "#fff", borderRadius: 9999, padding: "10px 20px", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+              <Download size={14} /> {t("out_download_pdf")}
+            </button>
+          )}
+          {exam.formats.includes("docx") && (
+            <button style={{ display: "flex", alignItems: "center", gap: 6, backgroundColor: "#0069e0", color: "#fff", borderRadius: 9999, padding: "10px 20px", border: "none", cursor: "pointer", fontSize: 13, fontWeight: 600 }}>
+              <Download size={14} /> {t("out_download_docx")}
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -95,6 +78,9 @@ function PreviewModal({ exam, onClose }: { exam: ExamOutput; onClose: () => void
 }
 
 export function OutputManager({ generatedExams, onDownload, onPreview }: OutputManagerProps) {
+  const { lang } = useLanguage();
+  const t = createT(lang);
+
   const [search, setSearch] = useState("");
   const [previewExam, setPreviewExam] = useState<ExamOutput | null>(null);
   const [filterFormat, setFilterFormat] = useState<"all" | "pdf" | "docx">("all");
@@ -113,18 +99,17 @@ export function OutputManager({ generatedExams, onDownload, onPreview }: OutputM
 
   const handleDownload = (exam: ExamOutput, format: string) => {
     if (onDownload) void onDownload(exam.id, format);
-    else alert(`Downloading "${exam.title}" as ${format.toUpperCase()}…`);
   };
+
+  const tableHeaders = [t("out_th_exam"), t("out_th_subject"), t("out_th_duration"), t("out_th_marks"), t("out_th_created"), t("out_th_actions")];
 
   return (
     <div style={{ backgroundColor: "#ebf5ff", minHeight: "calc(100vh - 64px)", fontFamily: "'Geist','Inter',sans-serif" }} className="px-4 py-10">
-      <div style={{ maxWidth: 1100, margin: "0 auto" }} className="mffb-stagger">
+      <div style={{ maxWidth: 1100, margin: "0 auto" }} className="mffb-page">
         {/* Header */}
         <div className="mb-8">
-          <h1 style={{ fontFamily: "'Inter',sans-serif", fontSize: 28, fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em" }}>My Outputs</h1>
-          <p style={{ fontSize: 14, color: "#93979f", marginTop: 6, letterSpacing: "-0.01em" }}>
-            View, preview, and download all your generated exams
-          </p>
+          <h1 style={{ fontFamily: "'Inter',sans-serif", fontSize: 28, fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em" }}>{t("out_title")}</h1>
+          <p style={{ fontSize: 14, color: "#93979f", marginTop: 6, letterSpacing: "-0.01em" }}>{t("out_desc")}</p>
         </div>
 
         {/* Controls */}
@@ -134,7 +119,7 @@ export function OutputManager({ generatedExams, onDownload, onPreview }: OutputM
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search exams…"
+              placeholder={t("out_search")}
               style={{ width: "100%", padding: "11px 14px 11px 40px", borderRadius: 14, border: "1px solid rgba(83,88,98,0.2)", backgroundColor: "#fafdff", fontSize: 14, color: "#0a0d12", fontFamily: "'Geist','Inter',sans-serif", outline: "none", boxSizing: "border-box" }}
             />
           </div>
@@ -142,7 +127,7 @@ export function OutputManager({ generatedExams, onDownload, onPreview }: OutputM
             {(["all", "pdf", "docx"] as const).map((f) => (
               <button key={f} onClick={() => setFilterFormat(f)}
                 style={{ padding: "9px 16px", borderRadius: 9999, border: filterFormat === f ? "none" : "1px solid rgba(83,88,98,0.15)", cursor: "pointer", fontSize: 13, fontWeight: 500, backgroundColor: filterFormat === f ? "#181d27" : "#fafdff", color: filterFormat === f ? "#fff" : "#535862", transition: "background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease, scale 0.15s ease-out" } as React.CSSProperties}>
-                {f === "all" ? "All formats" : f.toUpperCase()}
+                {f === "all" ? t("out_all_formats") : f.toUpperCase()}
               </button>
             ))}
           </div>
@@ -150,16 +135,15 @@ export function OutputManager({ generatedExams, onDownload, onPreview }: OutputM
 
         {/* Summary stats */}
         <div style={{ display: "flex", gap: 24, marginBottom: 24 }}>
-          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12", fontVariantNumeric: "tabular-nums" }}>{filtered.length}</strong> exams</span>
-          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12", fontVariantNumeric: "tabular-nums" }}>{filtered.filter((o) => o.formats.includes("pdf")).length}</strong> PDFs available</span>
-          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12", fontVariantNumeric: "tabular-nums" }}>{filtered.filter((o) => o.formats.includes("docx")).length}</strong> DOCX available</span>
+          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12", fontVariantNumeric: "tabular-nums" }}>{filtered.length}</strong> {t("out_exams")}</span>
+          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12", fontVariantNumeric: "tabular-nums" }}>{filtered.filter((o) => o.formats.includes("pdf")).length}</strong> {t("out_pdfs")}</span>
+          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12", fontVariantNumeric: "tabular-nums" }}>{filtered.filter((o) => o.formats.includes("docx")).length}</strong> {t("out_docx")}</span>
         </div>
 
         {/* Table */}
         <div style={{ backgroundColor: "#fafdff", borderRadius: 24, border: "1px solid rgba(83,88,98,0.12)", overflow: "hidden" }}>
-          {/* Table header */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 120px 90px 80px 120px 100px", gap: 12, padding: "12px 20px", borderBottom: "1px solid rgba(83,88,98,0.1)", backgroundColor: "#f6f7f8" }}>
-            {["Exam", "Subject", "Duration", "Marks", "Created", "Actions"].map((h) => (
+            {tableHeaders.map((h) => (
               <span key={h} style={{ fontSize: 11, fontWeight: 600, color: "#93979f", textTransform: "uppercase", letterSpacing: "0.05em" }}>{h}</span>
             ))}
           </div>
@@ -167,7 +151,7 @@ export function OutputManager({ generatedExams, onDownload, onPreview }: OutputM
           {filtered.length === 0 ? (
             <div style={{ textAlign: "center", padding: "48px 0" }}>
               <FileText size={36} color="#93979f" style={{ margin: "0 auto 10px" }} />
-              <p style={{ fontSize: 15, fontWeight: 600, color: "#0a0d12" }}>No exams found</p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: "#0a0d12" }}>{t("out_no_exams")}</p>
             </div>
           ) : (
             filtered.map((exam, i) => {
@@ -175,15 +159,7 @@ export function OutputManager({ generatedExams, onDownload, onPreview }: OutputM
               return (
                 <div
                   key={exam.id}
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 120px 90px 80px 120px 100px",
-                    gap: 12,
-                    padding: "14px 20px",
-                    alignItems: "center",
-                    borderBottom: i < filtered.length - 1 ? "1px solid rgba(83,88,98,0.07)" : "none",
-                    transition: "background-color 0.1s ease",
-                  }}
+                  style={{ display: "grid", gridTemplateColumns: "1fr 120px 90px 80px 120px 100px", gap: 12, padding: "14px 20px", alignItems: "center", borderBottom: i < filtered.length - 1 ? "1px solid rgba(83,88,98,0.07)" : "none", transition: "background-color 0.1s ease" }}
                   className="hover:bg-[#f6f7f8]"
                 >
                   <div style={{ minWidth: 0 }}>
@@ -217,7 +193,7 @@ export function OutputManager({ generatedExams, onDownload, onPreview }: OutputM
         </div>
       </div>
 
-      {previewExam && <PreviewModal exam={previewExam} onClose={() => setPreviewExam(null)} />}
+      {previewExam && <PreviewModal exam={previewExam} onClose={() => setPreviewExam(null)} t={t} />}
     </div>
   );
 }
