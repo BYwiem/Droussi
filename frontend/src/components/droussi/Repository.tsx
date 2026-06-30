@@ -47,7 +47,7 @@ function FileCard({ file, onRegenerate }: { file: RepoFile; onRegenerate: (id: s
         display: "flex",
         flexDirection: "column",
         gap: 14,
-        transition: "all 0.18s ease",
+        transition: "box-shadow 0.18s ease, transform 0.18s ease",
         boxShadow: "rgba(4,69,144,0.04) 0px 4px 12px 0px",
       }}
       onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "rgba(4,69,144,0.1) 0px 12px 20px 0px"; e.currentTarget.style.transform = "translateY(-2px)"; }}
@@ -145,7 +145,7 @@ export function Repository({ uploadedFiles, onRegenerateExam, onNavigateToExam }
 
   return (
     <div style={{ backgroundColor: "#ebf5ff", minHeight: "calc(100vh - 64px)", fontFamily: "'Geist','Inter',sans-serif" }} className="px-4 py-10">
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }} className="mffb-stagger">
         {/* Header */}
         <div className="mb-8">
           <h1 style={{ fontFamily: "'Inter',sans-serif", fontSize: 28, fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em" }}>Repository</h1>
@@ -190,7 +190,7 @@ export function Repository({ uploadedFiles, onRegenerateExam, onNavigateToExam }
                   fontWeight: 500,
                   backgroundColor: filterSubject === s ? "#181d27" : "#fafdff",
                   color: filterSubject === s ? "#fff" : "#535862",
-                  transition: "all 0.12s ease",
+                  transition: "background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease, scale 0.15s ease-out",
                 } as React.CSSProperties}
               >
                 {s}
@@ -201,8 +201,8 @@ export function Repository({ uploadedFiles, onRegenerateExam, onNavigateToExam }
 
         {/* Stats row */}
         <div style={{ display: "flex", gap: 20, marginBottom: 24, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12" }}>{filtered.length}</strong> files</span>
-          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12" }}>{allFiles.reduce((s, f) => s + f.examCount, 0)}</strong> exams generated</span>
+          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12", fontVariantNumeric: "tabular-nums" }}>{filtered.length}</strong> files</span>
+          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12", fontVariantNumeric: "tabular-nums" }}>{allFiles.reduce((s, f) => s + f.examCount, 0)}</strong> exams generated</span>
         </div>
 
         {/* Grid */}

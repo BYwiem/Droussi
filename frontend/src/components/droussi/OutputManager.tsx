@@ -43,6 +43,7 @@ function PreviewModal({ exam, onClose }: { exam: ExamOutput; onClose: () => void
       onClick={onClose}
     >
       <div
+        className="mffb-enter"
         style={{ backgroundColor: "#fafdff", borderRadius: 32, maxWidth: 640, width: "100%", maxHeight: "85vh", overflowY: "auto", boxShadow: "rgba(4,69,144,0.2) 0px 24px 48px 8px" }}
         onClick={(e) => e.stopPropagation()}
       >
@@ -117,7 +118,7 @@ export function OutputManager({ generatedExams, onDownload, onPreview }: OutputM
 
   return (
     <div style={{ backgroundColor: "#ebf5ff", minHeight: "calc(100vh - 64px)", fontFamily: "'Geist','Inter',sans-serif" }} className="px-4 py-10">
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1100, margin: "0 auto" }} className="mffb-stagger">
         {/* Header */}
         <div className="mb-8">
           <h1 style={{ fontFamily: "'Inter',sans-serif", fontSize: 28, fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em" }}>My Outputs</h1>
@@ -140,7 +141,7 @@ export function OutputManager({ generatedExams, onDownload, onPreview }: OutputM
           <div style={{ display: "flex", gap: 6 }}>
             {(["all", "pdf", "docx"] as const).map((f) => (
               <button key={f} onClick={() => setFilterFormat(f)}
-                style={{ padding: "9px 16px", borderRadius: 9999, border: filterFormat === f ? "none" : "1px solid rgba(83,88,98,0.15)", cursor: "pointer", fontSize: 13, fontWeight: 500, backgroundColor: filterFormat === f ? "#181d27" : "#fafdff", color: filterFormat === f ? "#fff" : "#535862", transition: "all 0.12s ease" } as React.CSSProperties}>
+                style={{ padding: "9px 16px", borderRadius: 9999, border: filterFormat === f ? "none" : "1px solid rgba(83,88,98,0.15)", cursor: "pointer", fontSize: 13, fontWeight: 500, backgroundColor: filterFormat === f ? "#181d27" : "#fafdff", color: filterFormat === f ? "#fff" : "#535862", transition: "background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease, scale 0.15s ease-out" } as React.CSSProperties}>
                 {f === "all" ? "All formats" : f.toUpperCase()}
               </button>
             ))}
@@ -149,9 +150,9 @@ export function OutputManager({ generatedExams, onDownload, onPreview }: OutputM
 
         {/* Summary stats */}
         <div style={{ display: "flex", gap: 24, marginBottom: 24 }}>
-          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12" }}>{filtered.length}</strong> exams</span>
-          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12" }}>{filtered.filter((o) => o.formats.includes("pdf")).length}</strong> PDFs available</span>
-          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12" }}>{filtered.filter((o) => o.formats.includes("docx")).length}</strong> DOCX available</span>
+          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12", fontVariantNumeric: "tabular-nums" }}>{filtered.length}</strong> exams</span>
+          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12", fontVariantNumeric: "tabular-nums" }}>{filtered.filter((o) => o.formats.includes("pdf")).length}</strong> PDFs available</span>
+          <span style={{ fontSize: 13, color: "#93979f" }}><strong style={{ color: "#0a0d12", fontVariantNumeric: "tabular-nums" }}>{filtered.filter((o) => o.formats.includes("docx")).length}</strong> DOCX available</span>
         </div>
 
         {/* Table */}

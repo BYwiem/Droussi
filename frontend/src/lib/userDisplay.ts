@@ -3,7 +3,6 @@ import type { User } from "@supabase/supabase-js";
 export interface DisplayUser {
   name: string;
   email: string;
-  role: "teacher" | "student";
 }
 
 export function getInitials(name: string): string {
@@ -22,6 +21,5 @@ export function toDisplayUser(user: User): DisplayUser {
   return {
     name: meta.full_name ?? meta.name ?? user.email?.split("@")[0] ?? "User",
     email: user.email ?? "",
-    role: "teacher",
   };
 }

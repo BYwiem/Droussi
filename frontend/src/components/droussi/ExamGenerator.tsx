@@ -185,7 +185,7 @@ export function ExamGenerator({
 
   return (
     <div style={{ backgroundColor: "#ebf5ff", minHeight: "calc(100vh - 64px)", fontFamily: "'Geist','Inter',sans-serif" }} className="px-4 py-10">
-      <div style={{ maxWidth: 900, margin: "0 auto" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto" }} className="mffb-stagger">
         {/* Header */}
         <div className="mb-8">
           <h1 style={{ fontFamily: "'Inter',sans-serif", fontSize: 28, fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em" }}>
@@ -219,7 +219,7 @@ export function ExamGenerator({
                         border: `1.5px solid ${selectedFiles.includes(file.id) ? "#0069e0" : "rgba(83,88,98,0.15)"}`,
                         backgroundColor: selectedFiles.includes(file.id) ? "#cce7ff" : "#f6f7f8",
                         cursor: "pointer",
-                        transition: "all 0.12s ease",
+                        transition: "border-color 0.12s ease, background-color 0.12s ease, scale 0.15s ease-out",
                         textAlign: "left",
                       }}
                     >
@@ -260,7 +260,7 @@ export function ExamGenerator({
                           flex: 1, padding: "7px 0", borderRadius: 9999, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
                           backgroundColor: difficulty === d ? "#181d27" : "#f6f7f8",
                           color: difficulty === d ? "#fff" : "#535862",
-                          transition: "all 0.12s ease",
+                          transition: "background-color 0.12s ease, color 0.12s ease, scale 0.15s ease-out",
                           textTransform: "capitalize",
                         }}>
                         {d}
@@ -342,7 +342,7 @@ export function ExamGenerator({
             )}
 
             {!generating && generatedExam && (
-              <div style={{ backgroundColor: "#fafdff", borderRadius: 24, border: "1px solid rgba(83,88,98,0.12)", overflow: "hidden" }}>
+              <div className="mffb-enter" style={{ backgroundColor: "#fafdff", borderRadius: 24, border: "1px solid rgba(83,88,98,0.12)", overflow: "hidden" }}>
                 {/* Exam header */}
                 <div style={{ background: "linear-gradient(135deg, #b47dff 11%, #7b2fe8 78%)", padding: "24px 24px" }}>
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
@@ -350,13 +350,13 @@ export function ExamGenerator({
                       <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>Generated Exam</p>
                       <h2 style={{ fontFamily: "'Inter',sans-serif", fontSize: 18, fontWeight: 700, color: "#fff", letterSpacing: "-0.03em", lineHeight: 1.2 }}>{generatedExam.title}</h2>
                       <div style={{ display: "flex", gap: 16, marginTop: 12 }}>
-                        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: "rgba(255,255,255,0.8)" }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: "rgba(255,255,255,0.8)", fontVariantNumeric: "tabular-nums" }}>
                           <Clock size={13} />{generatedExam.duration} min
                         </span>
-                        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: "rgba(255,255,255,0.8)" }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: "rgba(255,255,255,0.8)", fontVariantNumeric: "tabular-nums" }}>
                           <FileText size={13} />{generatedExam.questions.length} questions
                         </span>
-                        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: "rgba(255,255,255,0.8)" }}>
+                        <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 13, color: "rgba(255,255,255,0.8)", fontVariantNumeric: "tabular-nums" }}>
                           <Sparkles size={13} />{generatedExam.totalMarks} marks
                         </span>
                       </div>

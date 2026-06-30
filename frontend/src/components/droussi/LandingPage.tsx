@@ -1,7 +1,10 @@
 import { ArrowRight, BookOpen, Download, FileText, FolderOpen, GraduationCap, Sparkles, Upload, Users, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
+import { useSearchParams } from "react-router-dom";
+import { LoginModal } from "./LoginModal";
 
 interface LandingPageProps {
-  onGetStarted: () => void;
+  onGoogleSignIn: () => void;
 }
 
 const FEATURES = [
@@ -89,7 +92,22 @@ function Blob({ x, y, color, size }: { x: string; y: string; color: string; size
   );
 }
 
-export function LandingPage({ onGetStarted }: LandingPageProps) {
+export function LandingPage({ onGoogleSignIn }: LandingPageProps) {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [loginOpen, setLoginOpen] = useState(false);
+
+  // Open the modal automatically when redirected here with ?login (e.g. from a
+  // protected route), then clear the param so refreshes don't re-trigger it.
+  useEffect(() => {
+    if (searchParams.has("login")) {
+      setLoginOpen(true);
+      searchParams.delete("login");
+      setSearchParams(searchParams, { replace: true });
+    }
+  }, [searchParams, setSearchParams]);
+
+  const openLogin = () => setLoginOpen(true);
+
   return (
     <div style={{ backgroundColor: "#ebf5ff", fontFamily: "'Geist','Inter',sans-serif", overflowX: "hidden" }}>
 
@@ -102,7 +120,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
           <span style={{ fontFamily: "'Inter',sans-serif", fontWeight: 700, fontSize: 20, color: "#0a0d12", letterSpacing: "-0.03em" }}>Droussi</span>
         </div>
         <button
-          onClick={onGetStarted}
+          onClick={openLogin}
           style={{ backgroundColor: "#181d27", color: "#fff", borderRadius: 9999, padding: "9px 22px", fontSize: 14, fontWeight: 500, border: "none", cursor: "pointer", letterSpacing: "-0.01em" }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#2d3444")}
           onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#181d27")}
@@ -118,34 +136,36 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <Blob x="60%" y="60%" color="#f26110" size={160} />
         <Blob x="0%" y="55%" color="#bb9915" size={140} />
 
-        <div style={{ position: "relative", maxWidth: 720, margin: "0 auto" }}>
+        <div style={{ position: "relative", maxWidth: 720, margin: "0 auto" }} className="mffb-stagger">
           <div style={{ display: "inline-flex", alignItems: "center", gap: 7, backgroundColor: "#cce7ff", borderRadius: 9999, padding: "6px 16px", marginBottom: 28 }}>
             <Sparkles size={13} color="#0069e0" />
             <span style={{ fontSize: 13, fontWeight: 600, color: "#0069e0", letterSpacing: "-0.01em" }}>AI-powered exam generation</span>
           </div>
 
-          <h1 style={{ fontFamily: "'Inter',sans-serif", fontSize: "clamp(40px, 6vw, 72px)", fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em", lineHeight: 1.08, marginBottom: 24 }}>
+          <h1 style={{ fontFamily: "'Inter',sans-serif", fontSize: "clamp(40px, 6vw, 72px)", fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em", lineHeight: 1.08, marginBottom: 24, textWrap: "balance" }}>
             Turn your lessons into{" "}
             <span style={{ background: "linear-gradient(135deg, #479dff 11%, #0069e0 78%)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent", backgroundClip: "text" }}>
               ready-to-use exams
             </span>
           </h1>
 
-          <p style={{ fontSize: 18, color: "#535862", fontWeight: 500, letterSpacing: "-0.01em", lineHeight: 1.6, marginBottom: 40, maxWidth: 520, margin: "0 auto 40px" }}>
+          <p style={{ fontSize: 18, color: "#535862", fontWeight: 500, letterSpacing: "-0.01em", lineHeight: 1.6, marginBottom: 40, maxWidth: 520, margin: "0 auto 40px", textWrap: "pretty" }}>
             Upload your lecture notes, slides, or textbooks — Droussi generates complete, configurable exams in seconds and exports them to PDF or DOCX.
           </p>
 
           <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
             <button
-              onClick={onGetStarted}
-              style={{ display: "flex", alignItems: "center", gap: 8, backgroundColor: "#181d27", color: "#fff", borderRadius: 9999, padding: "14px 32px", fontSize: 15, fontWeight: 600, border: "none", cursor: "pointer", letterSpacing: "-0.01em", transition: "background-color 0.15s" }}
+              onClick={openLogin}
+              style={{ display: "flex", alignItems: "center", gap: 8, backgroundColor: "#181d27", color: "#fff", borderRadius: 9999, padding: "14px 32px", fontSize: 15, fontWeight: 600, border: "none", cursor: "pointer", letterSpacing: "-0.01em", transition: "background-color 0.15s, scale 0.1s" }}
               onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#2d3444")}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#181d27")}
+              onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = "#181d27"; e.currentTarget.style.scale = "1"; }}
+              onMouseDown={(e) => (e.currentTarget.style.scale = "0.96")}
+              onMouseUp={(e) => (e.currentTarget.style.scale = "1")}
             >
               Get started free <ArrowRight size={16} />
             </button>
             <button
-              onClick={onGetStarted}
+              onClick={openLogin}
               style={{ display: "flex", alignItems: "center", gap: 8, backgroundColor: "#fafdff", color: "#0a0d12", borderRadius: 9999, padding: "14px 32px", fontSize: 15, fontWeight: 600, border: "1px solid rgba(83,88,98,0.2)", cursor: "pointer", letterSpacing: "-0.01em" }}
             >
               View demo
@@ -173,7 +193,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <p style={{ fontSize: 12, fontWeight: 700, color: "#0069e0", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>How it works</p>
-            <h2 style={{ fontFamily: "'Inter',sans-serif", fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em", lineHeight: 1.15 }}>
+            <h2 style={{ fontFamily: "'Inter',sans-serif", fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em", lineHeight: 1.15, textWrap: "balance" }}>
               From upload to exam in four steps
             </h2>
           </div>
@@ -200,7 +220,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <div style={{ maxWidth: 1100, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 56 }}>
             <p style={{ fontSize: 12, fontWeight: 700, color: "#9552e0", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Everything you need</p>
-            <h2 style={{ fontFamily: "'Inter',sans-serif", fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em", lineHeight: 1.15 }}>
+            <h2 style={{ fontFamily: "'Inter',sans-serif", fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em", lineHeight: 1.15, textWrap: "balance" }}>
               Built for educators who value their time
             </h2>
           </div>
@@ -231,7 +251,7 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         <div style={{ maxWidth: 960, margin: "0 auto" }}>
           <div style={{ textAlign: "center", marginBottom: 52 }}>
             <p style={{ fontSize: 12, fontWeight: 700, color: "#f26110", letterSpacing: "0.1em", textTransform: "uppercase", marginBottom: 12 }}>Who it's for</p>
-            <h2 style={{ fontFamily: "'Inter',sans-serif", fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em", lineHeight: 1.15 }}>
+            <h2 style={{ fontFamily: "'Inter',sans-serif", fontSize: "clamp(28px, 4vw, 42px)", fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em", lineHeight: 1.15, textWrap: "balance" }}>
               One platform, two superpowers
             </h2>
           </div>
@@ -273,17 +293,19 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
             <Blob x="70%" y="-10%" color="#fff" size={180} />
             <Blob x="-10%" y="40%" color="#fff" size={140} />
             <div style={{ position: "relative" }}>
-              <h2 style={{ fontFamily: "'Inter',sans-serif", fontSize: "clamp(26px, 4vw, 38px)", fontWeight: 700, color: "#fff", letterSpacing: "-0.04em", lineHeight: 1.15, marginBottom: 16 }}>
+              <h2 style={{ fontFamily: "'Inter',sans-serif", fontSize: "clamp(26px, 4vw, 38px)", fontWeight: 700, color: "#fff", letterSpacing: "-0.04em", lineHeight: 1.15, marginBottom: 16, textWrap: "balance" }}>
                 Ready to build your first exam?
               </h2>
               <p style={{ fontSize: 16, color: "rgba(255,255,255,0.8)", lineHeight: 1.6, marginBottom: 36, letterSpacing: "-0.01em" }}>
                 Sign in with Google and go from uploaded notes to a finished exam in under two minutes.
               </p>
               <button
-                onClick={onGetStarted}
-                style={{ display: "inline-flex", alignItems: "center", gap: 8, backgroundColor: "#fff", color: "#181d27", borderRadius: 9999, padding: "14px 36px", fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", letterSpacing: "-0.02em", transition: "opacity 0.15s" }}
+                onClick={openLogin}
+                style={{ display: "inline-flex", alignItems: "center", gap: 8, backgroundColor: "#fff", color: "#181d27", borderRadius: 9999, padding: "14px 36px", fontSize: 15, fontWeight: 700, border: "none", cursor: "pointer", letterSpacing: "-0.02em", transition: "opacity 0.15s, scale 0.1s" }}
                 onMouseEnter={(e) => (e.currentTarget.style.opacity = "0.9")}
-                onMouseLeave={(e) => (e.currentTarget.style.opacity = "1")}
+                onMouseLeave={(e) => { e.currentTarget.style.opacity = "1"; e.currentTarget.style.scale = "1"; }}
+                onMouseDown={(e) => (e.currentTarget.style.scale = "0.96")}
+                onMouseUp={(e) => (e.currentTarget.style.scale = "1")}
               >
                 Get started — it's free <ArrowRight size={16} />
               </button>
@@ -302,6 +324,11 @@ export function LandingPage({ onGetStarted }: LandingPageProps) {
         </div>
         <p style={{ fontSize: 13, color: "#93979f" }}>AI-powered exam generation for educators and students.</p>
       </footer>
+
+      {/* Login modal — pops over the landing page and blurs it */}
+      {loginOpen && (
+        <LoginModal onClose={() => setLoginOpen(false)} onGoogleSignIn={onGoogleSignIn} />
+      )}
     </div>
   );
 }

@@ -15,4 +15,107 @@ body {
   color: #0a0d12;
   font-family: "Inter", "Geist", system-ui, sans-serif;
   @apply antialiased;
+  text-wrap: pretty;
+}
+
+/* ── make-interfaces-feel-better: shared polish ───────────────────────── */
+
+/* Scale on press — tactile feedback for every button (Principle 12).
+   scale stays at 0.96; never go below 0.95. Skipped for reduced-motion. */
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]) {
+    transition: scale 0.15s ease-out;
+  }
+  button:not(:disabled):active,
+  [role="button"]:not([aria-disabled="true"]):active {
+    scale: 0.96;
+  }
+
+  /* Split-and-stagger enter animation (Principle 5).
+     Add `mffb-stagger` to a container; its direct children fade up in turn. */
+  .mffb-stagger > * {
+    opacity: 0;
+    animation: mffb-fade-in-up 0.5s cubic-bezier(0.2, 0, 0, 1) forwards;
+  }
+  .mffb-stagger > *:nth-child(1) { animation-delay: 0ms; }
+  .mffb-stagger > *:nth-child(2) { animation-delay: 100ms; }
+  .mffb-stagger > *:nth-child(3) { animation-delay: 200ms; }
+  .mffb-stagger > *:nth-child(4) { animation-delay: 300ms; }
+  .mffb-stagger > *:nth-child(5) { animation-delay: 400ms; }
+  .mffb-stagger > *:nth-child(6) { animation-delay: 500ms; }
+
+  /* Single-element enter — for content that mounts on a state change
+     (e.g. a result card appearing) rather than a list. */
+  .mffb-enter {
+    animation: mffb-fade-in-up 0.4s cubic-bezier(0.2, 0, 0, 1) both;
+  }
+
+  @keyframes mffb-fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(12px);
+      filter: blur(4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+      filter: blur(0);
+    }
+  }
+}
+
+/* Subtle outline on images so they read with consistent depth (Principle 11).
+   Pure black in light mode — never a tinted neutral. */
+img {
+  outline: 1px solid rgba(0, 0, 0, 0.1);
+  outline-offset: -1px;
+}
+
+/* ── Modal: blurred backdrop + pop in / pop out ───────────────────────── */
+/* Backdrop blurs whatever is behind it. The `data-closing` attribute flips
+   the element to its exit animation before it unmounts. */
+.mffb-backdrop {
+  background-color: rgba(10, 13, 18, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: mffb-backdrop-in 0.25s ease forwards;
+}
+.mffb-backdrop[data-closing="true"] {
+  animation: mffb-backdrop-out 0.2s ease forwards;
+}
+
+.mffb-modal {
+  animation: mffb-modal-in 0.3s cubic-bezier(0.2, 0, 0, 1) both;
+}
+/* Exit is softer than the enter (Principle 6): a small pop-out + fade. */
+.mffb-modal[data-closing="true"] {
+  animation: mffb-modal-out 0.18s ease-in forwards;
+}
+
+@keyframes mffb-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes mffb-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+@keyframes mffb-modal-in {
+  from { opacity: 0; transform: scale(0.92) translateY(8px); filter: blur(4px); }
+  to { opacity: 1; transform: scale(1) translateY(0); filter: blur(0); }
+}
+@keyframes mffb-modal-out {
+  from { opacity: 1; transform: scale(1) translateY(0); }
+  to { opacity: 0; transform: scale(0.96) translateY(-6px); }
+}
+
+/* Respect reduced-motion: show/hide instantly, no transform animation. */
+@media (prefers-reduced-motion: reduce) {
+  .mffb-backdrop,
+  .mffb-backdrop[data-closing="true"],
+  .mffb-modal,
+  .mffb-modal[data-closing="true"] {
+    animation: none;
+  }
 }

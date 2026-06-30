@@ -68,7 +68,7 @@ export function NavBar({ user, currentPage, onNavigate, onLogout, extra }: NavBa
                   backgroundColor: currentPage === link.id ? "#cce7ff" : "transparent",
                   borderRadius: 9999,
                   padding: "6px 14px",
-                  transition: "all 0.15s ease",
+                  transition: "background-color 0.15s ease, color 0.15s ease",
                 }}
                 className="hover:bg-[#cce7ff]/60 hover:text-[#0a0d12]"
               >

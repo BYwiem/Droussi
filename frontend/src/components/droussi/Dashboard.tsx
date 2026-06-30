@@ -1,8 +1,8 @@
-import { ArrowRight, FileText, FolderOpen, GraduationCap, Sparkles, Upload, Users } from "lucide-react";
+import { ArrowRight, FileText, FolderOpen, Sparkles, Upload } from "lucide-react";
 import { UserInitialsAvatar } from "./UserInitialsAvatar";
 
 interface DashboardProps {
-  user: { name: string; email: string; role: string };
+  user: { name: string; email: string };
   stats: { uploads: number; exams: number; downloads: number };
   recentActivity?: { id: string | number; type: string; title: string; time: string; color: string }[];
   onNavigate: (page: string) => void;
@@ -87,6 +87,7 @@ function StatCard({ label, value, icon, color }: { label: string; value: number;
             color: "#0a0d12",
             letterSpacing: "-0.04em",
             lineHeight: 1,
+            fontVariantNumeric: "tabular-nums",
           }}
         >
           {value}
@@ -109,7 +110,7 @@ export function Dashboard({ user, stats, recentActivity, onNavigate }: Dashboard
       style={{ backgroundColor: "#ebf5ff", minHeight: "calc(100vh - 64px)", fontFamily: "'Geist','Inter',sans-serif" }}
       className="px-4 py-10"
     >
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
+      <div style={{ maxWidth: 1200, margin: "0 auto" }} className="mffb-stagger">
         {/* Header */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-2">
@@ -128,22 +129,6 @@ export function Dashboard({ user, stats, recentActivity, onNavigate }: Dashboard
               >
                 {user.name}
               </h1>
-            </div>
-            <div
-              style={{
-                marginLeft: "auto",
-                backgroundColor: user.role === "teacher" ? "#cce7ff" : "#f1e6ff",
-                borderRadius: 9999,
-                padding: "5px 14px",
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-              }}
-            >
-              {user.role === "teacher" ? <GraduationCap size={14} color="#0069e0" /> : <Users size={14} color="#9552e0" />}
-              <span style={{ fontSize: 12, fontWeight: 600, color: user.role === "teacher" ? "#0069e0" : "#9552e0", letterSpacing: "-0.01em" }}>
-                {user.role === "teacher" ? "Teacher" : "Student"}
-              </span>
             </div>
           </div>
         </div>
@@ -181,7 +166,7 @@ export function Dashboard({ user, stats, recentActivity, onNavigate }: Dashboard
                   padding: "24px 20px",
                   textAlign: "left",
                   cursor: "pointer",
-                  transition: "all 0.18s ease",
+                  transition: "box-shadow 0.18s ease, transform 0.18s ease, scale 0.15s ease-out",
                   display: "flex",
                   flexDirection: "column",
                   gap: 12,

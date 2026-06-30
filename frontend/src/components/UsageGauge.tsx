@@ -50,7 +50,7 @@ export default function UsageGauge() {
     >
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11, color: "#93979f" }}>
         <span style={{ fontWeight: 600, color: "#535862" }}>Daily usage</span>
-        <span style={{ fontWeight: 600, color: atLimit ? "#f26110" : "#535862" }}>
+        <span style={{ fontWeight: 600, color: atLimit ? "#f26110" : "#535862", fontVariantNumeric: "tabular-nums" }}>
           {formatTokens(usage.tokens_used)} / {formatTokens(usage.tokens_limit)}
         </span>
       </div>

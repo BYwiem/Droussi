@@ -1,13 +1,12 @@
-import { Navigate, useNavigate } from "react-router-dom";
+import { Navigate } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { LandingPage } from "../../components/droussi/LandingPage";
 
 export default function LandingRoute() {
-  const { session, loading } = useAuth();
-  const navigate = useNavigate();
+  const { session, loading, signInWithGoogle } = useAuth();
 
   if (loading) return null;
   if (session) return <Navigate to="/dashboard" replace />;
 
-  return <LandingPage onGetStarted={() => navigate("/login")} />;
+  return <LandingPage onGoogleSignIn={() => void signInWithGoogle()} />;
 }

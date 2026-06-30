@@ -192,7 +192,7 @@ export function UploadPage({
       }}
       className="px-4 py-10"
     >
-      <div style={{ maxWidth: 800, margin: "0 auto" }}>
+      <div style={{ maxWidth: 800, margin: "0 auto" }} className="mffb-stagger">
         <div className="mb-8">
           <h1
             style={{
@@ -361,7 +361,7 @@ export function UploadPage({
             textAlign: "center",
             cursor: selectedSubject ? "pointer" : "not-allowed",
             opacity: selectedSubject ? 1 : 0.65,
-            transition: "all 0.18s ease",
+            transition: "background-color 0.18s ease, border-color 0.18s ease, opacity 0.18s ease",
             marginBottom: 20,
           }}
         >
