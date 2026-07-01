@@ -89,6 +89,106 @@ img {
   outline-offset: -1px;
 }
 
+/* ── Landing page (Droussi) ───────────────────────────────────────────── */
+
+/* Rotating hero word. Each word remounts with a key change and plays this
+   enter; combined with a short hold it reads as a smooth swap. */
+@media (prefers-reduced-motion: no-preference) {
+  .dr-word {
+    display: inline-block;
+    animation: dr-word-in 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+
+  /* Scroll-reveal: hidden until IntersectionObserver adds `is-visible`. */
+  .dr-reveal {
+    opacity: 0;
+    transform: translate3d(0, 24px, 0);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1),
+      transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    will-change: opacity, transform;
+  }
+  .dr-reveal.is-visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+
+  /* Skeleton block for the animated app mockup — flat colour, gentle pulse
+     (no gradients, per the flat-theme direction). */
+  .dr-shimmer {
+    animation: dr-pulse 1.7s ease-in-out infinite;
+  }
+
+  @keyframes dr-word-in {
+    from { opacity: 0; transform: translate3d(0, 0.5em, 0); filter: blur(4px); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0); }
+  }
+  @keyframes dr-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.45; }
+  }
+
+  /* Bobbing scroll-cue arrow in the hero. */
+  .dr-bob { animation: dr-bob 1.8s ease-in-out infinite; }
+  @keyframes dr-bob {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(6px); }
+  }
+
+  /* Floating blurred blobs behind the hero. Each drifts on its own path;
+     transform + opacity only, so it stays GPU-composited and smooth. */
+  .dr-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(48px);
+    pointer-events: none;
+    will-change: transform;
+  }
+  .dr-blob-1 { animation: dr-drift-1 19s ease-in-out infinite; }
+  .dr-blob-2 { animation: dr-drift-2 23s ease-in-out infinite; }
+  .dr-blob-3 { animation: dr-drift-3 21s ease-in-out infinite; }
+  .dr-blob-4 { animation: dr-drift-4 26s ease-in-out infinite; }
+  .dr-blob-5 { animation: dr-drift-5 24s ease-in-out infinite; }
+
+  @keyframes dr-drift-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(40px, 30px) scale(1.12); }
+  }
+  @keyframes dr-drift-2 {
+    0%, 100% { transform: translate(0, 0) scale(1.05); }
+    50% { transform: translate(-45px, 40px) scale(0.9); }
+  }
+  @keyframes dr-drift-3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(30px, -35px) scale(1.15); }
+  }
+  @keyframes dr-drift-4 {
+    0%, 100% { transform: translate(0, 0) scale(0.95); }
+    50% { transform: translate(-35px, -30px) scale(1.1); }
+  }
+  @keyframes dr-drift-5 {
+    0%, 100% { transform: translate(0, 0) scale(1.1); }
+    50% { transform: translate(50px, 25px) scale(0.92); }
+  }
+
+  /* Blinking caret for the typewriter heading. */
+  .dr-caret {
+    display: inline-block;
+    width: 3px;
+    margin-left: 2px;
+    animation: dr-blink 1s step-end infinite;
+  }
+  @keyframes dr-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+}
+
+/* Reduced motion: everything is shown statically, no drift/pulse/blink. */
+@media (prefers-reduced-motion: reduce) {
+  .dr-reveal { opacity: 1; }
+  .dr-caret { display: none; }
+}
+
 /* ── Modal: blurred backdrop + pop in / pop out ───────────────────────── */
 /* Backdrop blurs whatever is behind it. The `data-closing` attribute flips
    the element to its exit animation before it unmounts. */

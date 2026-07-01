@@ -49,29 +49,29 @@ export function Dashboard({ user, stats, recentActivity, onNavigate }: Dashboard
       id: "upload",
       title: t("dash_upload_title"),
       description: t("dash_upload_desc"),
-      icon: <Upload size={22} color="#fff" />,
-      gradient: "linear-gradient(135deg, #479dff 11%, #0069e0 78%)",
+      icon: <Upload size={22} color="#0069e0" />,
+      tint: "#cce7ff",
     },
     {
       id: "exam",
       title: t("dash_exam_title"),
       description: t("dash_exam_desc"),
-      icon: <Sparkles size={22} color="#fff" />,
-      gradient: "linear-gradient(135deg, #b47dff 11%, #7b2fe8 78%)",
+      icon: <Sparkles size={22} color="#9552e0" />,
+      tint: "#f1e6ff",
     },
     {
       id: "repository",
       title: t("dash_repo_title"),
       description: t("dash_repo_desc"),
-      icon: <FolderOpen size={22} color="#fff" />,
-      gradient: "linear-gradient(135deg, #ffa84f 11%, #e05a00 78%)",
+      icon: <FolderOpen size={22} color="#e05a00" />,
+      tint: "#ffe6d1",
     },
     {
       id: "outputs",
       title: t("dash_outputs_title"),
       description: t("dash_outputs_desc"),
-      icon: <FileText size={22} color="#fff" />,
-      gradient: "linear-gradient(135deg, #52d69a 11%, #1aa06d 78%)",
+      icon: <FileText size={22} color="#1aa06d" />,
+      tint: "#d3f6e3",
     },
   ];
 
@@ -124,7 +124,7 @@ export function Dashboard({ user, stats, recentActivity, onNavigate }: Dashboard
                 onMouseEnter={(e) => { e.currentTarget.style.boxShadow = "rgba(4,69,144,0.12) 0px 14px 24px 4px"; e.currentTarget.style.transform = "translateY(-2px)"; }}
                 onMouseLeave={(e) => { e.currentTarget.style.boxShadow = "rgba(4,69,144,0.04) 0px 8px 16px 2px"; e.currentTarget.style.transform = "translateY(0)"; }}
               >
-                <div style={{ width: 44, height: 44, borderRadius: 14, background: action.gradient, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                <div style={{ width: 44, height: 44, borderRadius: 14, backgroundColor: action.tint, display: "flex", alignItems: "center", justifyContent: "center" }}>
                   {action.icon}
                 </div>
                 <div>

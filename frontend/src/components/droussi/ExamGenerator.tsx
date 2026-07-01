@@ -363,7 +363,7 @@ export function ExamGenerator({
           <div className="md:col-span-3">
             {generating && (
               <div style={{ backgroundColor: "#fafdff", borderRadius: 24, border: "1px solid rgba(83,88,98,0.12)", padding: 48, textAlign: "center" }}>
-                <div style={{ width: 64, height: 64, borderRadius: 20, background: "linear-gradient(135deg, #b47dff 11%, #7b2fe8 78%)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
+                <div style={{ width: 64, height: 64, borderRadius: 20, backgroundColor: "#9552e0", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 20px" }}>
                   <Sparkles size={28} color="#fff" className="animate-pulse" />
                 </div>
                 <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 18, fontWeight: 600, color: "#0a0d12", letterSpacing: "-0.03em", marginBottom: 8 }}>{t("eg_ai_loading")}</p>
@@ -387,7 +387,7 @@ export function ExamGenerator({
             {!generating && generatedExam && (
               <div className="mffb-enter" style={{ backgroundColor: "#fafdff", borderRadius: 24, border: "1px solid rgba(83,88,98,0.12)", overflow: "hidden" }}>
                 {/* Exam header */}
-                <div style={{ background: "linear-gradient(135deg, #b47dff 11%, #7b2fe8 78%)", padding: "24px 24px" }}>
+                <div style={{ backgroundColor: "#9552e0", padding: "24px 24px" }}>
                   <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
                     <div>
                       <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 4 }}>{t("eg_generated_label")}</p>

@@ -23,7 +23,7 @@ export function UserInitialsAvatar({
         width: size,
         height: size,
         borderRadius: "50%",
-        background: "linear-gradient(135deg, #479dff 11%, #0069e0 78%)",
+        background: "#0069e0",
         border: size > 32 ? "2px solid #cce7ff" : "none",
         display: "flex",
         alignItems: "center",

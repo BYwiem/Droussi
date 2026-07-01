@@ -40,7 +40,7 @@ export function NavBar({ user, currentPage, onNavigate, onLogout, extra, isAdmin
           className="flex items-center gap-2.5 group"
         >
           <div
-            style={{ background: "linear-gradient(135deg, #479dff 11%, #0069e0 78%)", borderRadius: 10 }}
+            style={{ backgroundColor: "#0069e0", borderRadius: 10 }}
             className="w-8 h-8 flex items-center justify-center shadow-sm"
           >
             <BookOpen size={16} color="#fff" strokeWidth={2.5} />

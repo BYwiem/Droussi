@@ -42,7 +42,7 @@ function PreviewModal({ exam, onClose, t }: { exam: ExamOutput; onClose: () => v
         onClick={(e) => e.stopPropagation()}
       >
         {/* Modal header */}
-        <div style={{ background: "linear-gradient(135deg, #479dff 11%, #0069e0 78%)", padding: "28px 28px 24px", borderRadius: "32px 32px 0 0" }}>
+        <div style={{ backgroundColor: "#0069e0", padding: "28px 28px 24px", borderRadius: "32px 32px 0 0" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
             <div>
               <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 6 }}>{t("out_preview_label")}</p>
