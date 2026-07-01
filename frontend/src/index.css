@@ -80,6 +80,22 @@ body {
       transform: translate3d(0, 0, 0);
     }
   }
+
+  /* Unified page transition — the AppShell wraps the routed <Outlet /> in
+     `.dr-page` keyed by pathname, so every navigation replays a single clean
+     fade-up (no more per-page inconsistency or double-animation). */
+  .dr-page {
+    animation: dr-page-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+  @keyframes dr-page-in {
+    from { opacity: 0; transform: translate3d(0, 10px, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
+  }
+}
+
+/* Reduced motion: page transition shows instantly. */
+@media (prefers-reduced-motion: reduce) {
+  .dr-page { animation: none; }
 }
 
 /* Subtle outline on images so they read with consistent depth (Principle 11).

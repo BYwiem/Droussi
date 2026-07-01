@@ -148,7 +148,7 @@ export function UploadPage({ existingFiles, loading, onFilesUploaded, onUploadFi
 
   return (
     <div style={{ backgroundColor: "#ebf5ff", minHeight: "calc(100vh - 64px)", fontFamily: "'Geist','Inter',sans-serif" }} className="px-4 py-10">
-      <div style={{ maxWidth: 800, margin: "0 auto" }} className="mffb-page">
+      <div style={{ maxWidth: 800, margin: "0 auto" }}>
         <div className="mb-8">
           <h1 style={{ fontFamily: "'Inter',sans-serif", fontSize: 28, fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em" }}>{t("up_title")}</h1>
           <p style={{ fontSize: 14, color: "#93979f", marginTop: 6, letterSpacing: "-0.01em" }}>{t("up_desc")}</p>

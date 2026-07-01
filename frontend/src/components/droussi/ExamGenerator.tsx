@@ -170,7 +170,7 @@ export function ExamGenerator({
 
   return (
     <div style={{ backgroundColor: "#ebf5ff", minHeight: "calc(100vh - 64px)", fontFamily: "'Geist','Inter',sans-serif" }} className="px-4 py-10">
-      <div style={{ maxWidth: 900, margin: "0 auto" }} className="mffb-page">
+      <div style={{ maxWidth: 900, margin: "0 auto" }}>
         {/* Header */}
         <div className="mb-8">
           <h1 style={{ fontFamily: "'Inter',sans-serif", fontSize: 28, fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.04em" }}>

@@ -1,4 +1,4 @@
-import { BookOpen, ChevronDown, LogOut, Menu, X } from "lucide-react";
+import { ChevronDown, LogOut, Menu, X } from "lucide-react";
 import { useState } from "react";
 import { useLanguage } from "../../contexts/LanguageContext";
 import { createT } from "../../lib/i18n";
@@ -39,12 +39,12 @@ export function NavBar({ user, currentPage, onNavigate, onLogout, extra, isAdmin
           onClick={() => onNavigate("dashboard")}
           className="flex items-center gap-2.5 group"
         >
-          <div
+          {/* <div
             style={{ backgroundColor: "#0069e0", borderRadius: 10 }}
             className="w-8 h-8 flex items-center justify-center shadow-sm"
           >
             <BookOpen size={16} color="#fff" strokeWidth={2.5} />
-          </div>
+          </div> */}
           <span
             style={{
               fontFamily: "'Inter', sans-serif",

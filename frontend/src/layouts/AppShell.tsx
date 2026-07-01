@@ -2,7 +2,6 @@ import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { UsageProvider } from "../hooks/useUsage";
 import { MeProvider, useMe } from "../hooks/useMe";
-import UsageGauge from "../components/UsageGauge";
 import { NavBar } from "../components/droussi/NavBar";
 import { toDisplayUser } from "../lib/userDisplay";
 
@@ -50,9 +49,11 @@ function AppShellInner() {
         isAdmin={isAdmin}
         onNavigate={(page) => navigate(PAGE_ROUTES[page] ?? "/dashboard")}
         onLogout={() => void signOut()}
-        extra={<UsageGauge />}
       />
-      <Outlet />
+      {/* Keyed by pathname so each navigation replays one clean fade-up. */}
+      <div key={location.pathname} className="dr-page">
+        <Outlet />
+      </div>
     </div>
   );
 }
