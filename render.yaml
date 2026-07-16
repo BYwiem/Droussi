@@ -32,3 +32,21 @@ services:
         sync: false
       - key: OPENROUTER_REFERER
         sync: false
+      # Plan quotas (optional overrides; defaults are Free=3 / Pro=50).
+      - key: PER_USER_EXAM_LIMIT_FREE
+        value: "3"
+      - key: PER_USER_EXAM_LIMIT_PRO
+        value: "50"
+      # Lemon Squeezy billing (set in dashboard after creating the Pro product).
+      - key: LEMONSQUEEZY_API_KEY
+        sync: false
+      - key: LEMONSQUEEZY_STORE_ID
+        sync: false
+      - key: LEMONSQUEEZY_PRO_VARIANT_ID
+        sync: false
+      - key: LEMONSQUEEZY_WEBHOOK_SECRET
+        sync: false
+      - key: BILLING_SUCCESS_URL
+        sync: false
+      - key: BILLING_CANCEL_URL
+        sync: false

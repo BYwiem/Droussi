@@ -10,13 +10,25 @@ class TestHealth:
 
 
 class TestMe:
-    def test_me_returns_current_user(self, client):
+    def test_me_returns_current_user(self, client, monkeypatch):
+        sb = FakeSupabase(
+            tables={
+                # register_user upsert + get_billing_profile select
+                "app_users": [
+                    FakeResp(None),
+                    FakeResp({"plan": "free", "subscription_status": None}),
+                ],
+            }
+        )
+        monkeypatch.setattr("app.services.usage.get_supabase", lambda: sb)
+        monkeypatch.setattr("app.services.billing.get_supabase", lambda: sb)
         r = client.get("/api/me")
         assert r.status_code == 200
         body = r.json()
         assert body["id"] == "user123"
         assert body["email"] == "user@test.com"
         assert body["is_admin"] is False
+        assert body["plan"] == "free"
 
 
 class TestDeleteMe:

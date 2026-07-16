@@ -135,6 +135,7 @@ export default function ExamRoute() {
         window.open(url, "_blank");
       }}
       onViewExam={(examId) => navigate(`/exams/${examId}`)}
+      onUpgrade={() => navigate("/pricing")}
     />
   );
 }

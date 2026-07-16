@@ -199,7 +199,7 @@ export function buildRecentActivity(
       type: "upload",
       title: d.filename,
       time: formatRelativeTime(d.created_at),
-      color: "#cce7ff",
+      color: "var(--secondary)",
       sort: new Date(d.created_at).getTime(),
     });
   }

@@ -14,18 +14,18 @@ export default function ExamBuilder() {
   return (
     <div
       style={{
-        backgroundColor: "#ebf5ff",
+        backgroundColor: "var(--background)",
         minHeight: "calc(100vh - 64px)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         fontFamily: "'Geist','Inter',sans-serif",
-        color: "#93979f",
+        color: "var(--muted-foreground)",
         fontSize: 14,
       }}
     >
       Redirecting…{" "}
-      <Link to="/exam" style={{ marginLeft: 4, color: "#0069e0" }}>
+      <Link to="/exam" style={{ marginLeft: 4, color: "var(--brand)" }}>
         Open exam generator
       </Link>
     </div>

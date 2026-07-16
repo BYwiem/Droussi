@@ -13,9 +13,9 @@ const inputStyle: React.CSSProperties = {
   padding: "8px 10px",
   borderRadius: 8,
   border: "1px solid rgba(83,88,98,0.25)",
-  backgroundColor: "#fff",
+  backgroundColor: "var(--card)",
   fontSize: 13,
-  color: "#0a0d12",
+  color: "var(--foreground)",
   fontFamily: "'Geist','Inter',sans-serif",
   outline: "none",
   boxSizing: "border-box",
@@ -24,7 +24,7 @@ const inputStyle: React.CSSProperties = {
 const labelStyle: React.CSSProperties = {
   fontSize: 11,
   fontWeight: 600,
-  color: "#93979f",
+  color: "var(--muted-foreground)",
   display: "block",
   marginBottom: 4,
 };
@@ -62,23 +62,23 @@ export default function ExamEditor({ exam, saving, onSave, onCancel }: Props) {
           <input value={title} onChange={(e) => setTitle(e.target.value)} style={{ ...inputStyle, fontSize: 15, fontWeight: 600 }} />
         </div>
         <div style={{ textAlign: "right", whiteSpace: "nowrap" }}>
-          <span style={{ fontSize: 11, color: "#93979f", display: "block" }}>Total</span>
-          <span style={{ fontSize: 18, fontWeight: 700, color: "#0a0d12", fontVariantNumeric: "tabular-nums" }}>{totalMarks} pts</span>
+          <span style={{ fontSize: 11, color: "var(--muted-foreground)", display: "block" }}>Total</span>
+          <span style={{ fontSize: 18, fontWeight: 700, color: "var(--foreground)", fontVariantNumeric: "tabular-nums" }}>{totalMarks} pts</span>
         </div>
       </div>
 
       <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         {exercises.map((ex, i) => (
-          <div key={i} style={{ border: "1px solid rgba(83,88,98,0.15)", borderRadius: 14, padding: 16, backgroundColor: "#fafdff" }}>
+          <div key={i} style={{ border: "1px solid var(--border)", borderRadius: 14, padding: 16, backgroundColor: "var(--card)" }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-              <span style={{ fontSize: 13, fontWeight: 700, color: "#535862" }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-secondary)" }}>
                 Exercise {i + 1}{" "}
-                <span style={{ fontSize: 11, fontWeight: 600, color: "#93979f", textTransform: "uppercase" }}>
+                <span style={{ fontSize: 11, fontWeight: 600, color: "var(--muted-foreground)", textTransform: "uppercase" }}>
                   ({ex.type === "mcq" ? "MCQ" : "Open"})
                 </span>
               </span>
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <label style={{ fontSize: 11, fontWeight: 600, color: "#93979f" }}>Marks</label>
+                <label style={{ fontSize: 11, fontWeight: 600, color: "var(--muted-foreground)" }}>Marks</label>
                 <input
                   type="number"
                   min={0}
@@ -132,14 +132,14 @@ export default function ExamEditor({ exam, saving, onSave, onCancel }: Props) {
         <button
           onClick={onCancel}
           disabled={saving}
-          style={{ borderRadius: 9999, padding: "9px 18px", fontSize: 13, fontWeight: 600, border: "1px solid rgba(83,88,98,0.25)", backgroundColor: "#fff", color: "#535862", cursor: saving ? "not-allowed" : "pointer" }}
+          style={{ borderRadius: 9999, padding: "9px 18px", fontSize: 13, fontWeight: 600, border: "1px solid var(--border-strong)", backgroundColor: "var(--card)", color: "var(--text-secondary)", cursor: saving ? "not-allowed" : "pointer" }}
         >
           Cancel
         </button>
         <button
           onClick={() => onSave({ title, exercises })}
           disabled={saving}
-          style={{ borderRadius: 9999, padding: "9px 18px", fontSize: 13, fontWeight: 600, border: "none", backgroundColor: saving ? "#93979f" : "#181d27", color: "#fff", cursor: saving ? "not-allowed" : "pointer" }}
+          style={{ borderRadius: 9999, padding: "9px 18px", fontSize: 13, fontWeight: 600, border: "none", backgroundColor: saving ? "var(--muted-foreground)" : "var(--primary)", color: "var(--primary-foreground)", cursor: saving ? "not-allowed" : "pointer" }}
         >
           {saving ? "Saving…" : "Save changes"}
         </button>

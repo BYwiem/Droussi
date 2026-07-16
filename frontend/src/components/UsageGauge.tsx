@@ -33,18 +33,18 @@ export default function UsageGauge() {
   return (
     <div
       style={{
-        backgroundColor: "#fafdff",
+        backgroundColor: "var(--card)",
         borderRadius: 14,
-        border: "1px solid rgba(83,88,98,0.12)",
+        border: "1px solid var(--border)",
         padding: "8px 12px",
         minWidth: 160,
         boxShadow: "rgba(4,69,144,0.06) 0px 4px 12px",
       }}
       title={`Exams today: ${usage.exams_used} / ${usage.exams_limit}. Resets at ${formatResetTime(usage.resets_at)} UTC.`}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11, color: "#93979f" }}>
-        <span style={{ fontWeight: 600, color: "#535862" }}>Exams today</span>
-        <span style={{ fontWeight: 600, color: atLimit ? "#f26110" : "#535862", fontVariantNumeric: "tabular-nums" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11, color: "var(--muted-foreground)" }}>
+        <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>Exams today</span>
+        <span style={{ fontWeight: 600, color: atLimit ? "#f26110" : "var(--text-secondary)", fontVariantNumeric: "tabular-nums" }}>
           {usage.exams_used} / {usage.exams_limit}
         </span>
       </div>
@@ -53,7 +53,7 @@ export default function UsageGauge() {
           marginTop: 6,
           height: 6,
           borderRadius: 9999,
-          backgroundColor: "#f6f7f8",
+          backgroundColor: "var(--muted)",
           overflow: "hidden",
         }}
       >

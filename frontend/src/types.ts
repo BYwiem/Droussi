@@ -49,6 +49,8 @@ export interface ExamRow {
   created_at: string;
 }
 
+export type Plan = "free" | "pro";
+
 export interface UsageInfo {
   exams_used: number;
   exams_limit: number;
@@ -57,12 +59,16 @@ export interface UsageInfo {
   cost_usd_today: number;
   usage_date: string;
   resets_at: string;
+  plan?: Plan;
 }
 
 export interface MeInfo {
   id: string;
   email: string | null;
   is_admin: boolean;
+  plan: Plan;
+  subscription_status?: string | null;
+  current_period_end?: string | null;
 }
 
 export interface AdminUserUsage {

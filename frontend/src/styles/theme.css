@@ -1,15 +1,80 @@
-:root {
-  --font-size: 16px;
+/* Light (default) */
+:root,
+[data-theme="light"] {
   --background: #ebf5ff;
   --foreground: #0a0d12;
   --card: #fafdff;
   --primary: #181d27;
+  --primary-foreground: #ffffff;
   --secondary: #cce7ff;
+  --secondary-foreground: #0069e0;
   --muted: #f6f7f8;
   --muted-foreground: #93979f;
+  --text-secondary: #535862;
+  --border: rgba(83, 88, 98, 0.12);
+  --border-strong: rgba(83, 88, 98, 0.2);
+  --nav-bg: rgba(235, 245, 255, 0.85);
+  --shadow: rgba(4, 69, 144, 0.08);
+  --shadow-strong: rgba(4, 69, 144, 0.18);
+  --brand: #0069e0;
+  --accent: #f26110;
+  --danger: #c0362c;
+  --overlay: rgba(10, 13, 18, 0.5);
+  --chip-pdf-bg: #fff2be;
+  --chip-docx-bg: #cce7ff;
+  /* Featured “Pro” panel — always dark for contrast in both themes */
+  --pro-surface: #181d27;
+  --pro-surface-fg: #ffffff;
+  --pro-surface-muted: rgba(255, 255, 255, 0.65);
   --radius-card: 32px;
+  color-scheme: light;
+}
+
+/* Dark — cool ink, not purple glow */
+[data-theme="dark"] {
+  --background: #0b1018;
+  --foreground: #e8eef6;
+  --card: #141b26;
+  --primary: #e8eef6;
+  --primary-foreground: #0b1018;
+  --secondary: #1a2d45;
+  --secondary-foreground: #7db8f5;
+  --muted: #1a2230;
+  --muted-foreground: #8b93a1;
+  --text-secondary: #a0a8b4;
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.16);
+  --nav-bg: rgba(11, 16, 24, 0.88);
+  --shadow: rgba(0, 0, 0, 0.35);
+  --shadow-strong: rgba(0, 0, 0, 0.5);
+  --brand: #3b8ef0;
+  --accent: #f26110;
+  --danger: #e85a50;
+  --overlay: rgba(0, 0, 0, 0.65);
+  --chip-pdf-bg: #3d3420;
+  --chip-docx-bg: #1a2d45;
+  --pro-surface: #1e2633;
+  --pro-surface-fg: #ffffff;
+  --pro-surface-muted: rgba(255, 255, 255, 0.65);
+  --radius-card: 32px;
+  color-scheme: dark;
 }
 
 html {
-  font-size: var(--font-size);
+  font-size: var(--font-size, 16px);
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* Smooth theme swap without animating layout */
+html,
+body,
+#root {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Hover helper for nav links / chips that used Tailwind arbitrary colors */
+.dr-hover-secondary:hover {
+  background-color: color-mix(in srgb, var(--secondary) 65%, transparent) !important;
+  color: var(--foreground) !important;
 }

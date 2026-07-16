@@ -58,13 +58,18 @@ _LLM_MAX_ATTEMPTS = 2
 _LLM_BACKOFF_BASE_SECONDS = 1.5
 
 
-async def _chat_with_backoff(messages: list[dict[str, str]]):
+async def _chat_with_backoff(
+    messages: list[dict[str, str]], *, plan: str = "free"
+):
     """Call the LLM, retrying transient RuntimeErrors with exponential backoff."""
     last_error: Exception | None = None
     for attempt in range(_LLM_MAX_ATTEMPTS):
         try:
             return await llm.chat(
-                messages, response_format_json=True, max_tokens=2500
+                messages,
+                response_format_json=True,
+                max_tokens=2500,
+                plan=plan,
             )
         except RuntimeError as e:
             last_error = e
@@ -82,6 +87,9 @@ async def generate_exam(
 ) -> ExamContent:
     spec.validate_consistency()
 
+    # Plan gates which OpenRouter models we may use (paid fallbacks = Pro only).
+    plan = await run_in_threadpool(usage_service.get_user_plan, user_id)
+
     user_prompt = build_user_prompt(spec=spec, course_text=course_text)
     messages = [
         {"role": "system", "content": SYSTEM_PROMPT},
@@ -92,7 +100,7 @@ async def generate_exam(
     cost_usd = 0.0  # accumulate across retries so we bill the true spend once
     for _ in range(2):
         try:
-            result = await _chat_with_backoff(messages)
+            result = await _chat_with_backoff(messages, plan=plan)
             cost_usd += result.cost_usd
             payload = json.loads(_extract_json(result.content))
             content = ExamContent.model_validate(payload)

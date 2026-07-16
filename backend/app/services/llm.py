@@ -125,6 +125,7 @@ async def chat(
     *,
     response_format_json: bool = False,
     model: str | None = None,
+    plan: str = "free",
     temperature: float = 0.4,
     max_tokens: int = 4000,
 ) -> ChatResult:
@@ -145,7 +146,8 @@ async def chat(
     if response_format_json:
         body["response_format"] = {"type": "json_object"}
 
-    models = [model] if model else s.openrouter_models
+    # Free plan → free models only. Pro → free models then paid fallbacks.
+    models = [model] if model else s.models_for_plan(plan)
     models = models[: s.openrouter_max_model_attempts]
     errors: list[str] = []
 

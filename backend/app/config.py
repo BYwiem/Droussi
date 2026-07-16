@@ -12,7 +12,12 @@ class Settings(BaseSettings):
     supabase_jwt_aud: str = "authenticated"
 
     openrouter_api_key: str
-    # Fixed daily exam quota PER USER (does not shrink as more users join).
+    # Daily exam quotas by plan. Free is intentionally small so paid conversion
+    # funds OpenRouter credits; Pro is the paid tier.
+    per_user_exam_limit_free: int = 3
+    per_user_exam_limit_pro: int = 50
+    # Deprecated alias kept for older env files / admin dashboard display.
+    # New code uses the plan-specific limits above.
     per_user_exam_limit: int = 30
     # Account-wide safety cap: stop all generation once total spend for the
     # current UTC day reaches this many USD. Protects the shared credit pool.
@@ -26,10 +31,25 @@ class Settings(BaseSettings):
         "google/gemma-3-27b-it:free,"
         "openrouter/free"
     )
+    # Paid-model fallbacks used only by Pro subscribers when free models fail.
+    openrouter_paid_fallback_models: str = (
+        "deepseek/deepseek-chat,"
+        "google/gemini-2.0-flash-001"
+    )
     openrouter_request_timeout: int = 60
     openrouter_max_model_attempts: int = 3
     openrouter_referer: str = "http://localhost:5173"
     openrouter_title: str = "Exam Generator"
+
+    # Lemon Squeezy (Merchant of Record). Empty defaults keep local/dev bootable
+    # without billing credentials; checkout/portal then return 503.
+    lemonsqueezy_api_key: str = ""
+    lemonsqueezy_store_id: str = ""
+    lemonsqueezy_pro_variant_id: str = ""
+    lemonsqueezy_webhook_secret: str = ""
+    # Where Lemon Squeezy redirects after checkout (frontend origin).
+    billing_success_url: str = "http://localhost:5173/pricing?checkout=success"
+    billing_cancel_url: str = "http://localhost:5173/pricing?checkout=cancelled"
 
     allowed_origins: str = "http://localhost:5173"
     documents_bucket: str = "documents"
@@ -63,12 +83,41 @@ class Settings(BaseSettings):
 
     @property
     def openrouter_models(self) -> list[str]:
+        """Default (free-tier) model chain — free models only."""
+        return self.models_for_plan("free")
+
+    @property
+    def openrouter_paid_models(self) -> list[str]:
         models: list[str] = []
-        for candidate in [self.openrouter_model, *self.openrouter_fallback_models.split(",")]:
+        for candidate in self.openrouter_paid_fallback_models.split(","):
             model = candidate.strip()
             if model and model not in models:
                 models.append(model)
         return models
+
+    def models_for_plan(self, plan: str) -> list[str]:
+        """Model attempt chain for a subscription plan.
+
+        Free users stay on `:free` models. Pro users try free models first,
+        then fall back to the paid chain so quality stays high when free
+        models are rate-limited.
+        """
+        models: list[str] = []
+        free_chain = [self.openrouter_model, *self.openrouter_fallback_models.split(",")]
+        for candidate in free_chain:
+            model = candidate.strip()
+            if model and model not in models:
+                models.append(model)
+        if (plan or "free").lower() == "pro":
+            for model in self.openrouter_paid_models:
+                if model not in models:
+                    models.append(model)
+        return models
+
+    def exam_limit_for_plan(self, plan: str) -> int:
+        if (plan or "free").lower() == "pro":
+            return max(self.per_user_exam_limit_pro, 0)
+        return max(self.per_user_exam_limit_free, 0)
 
 
 @lru_cache

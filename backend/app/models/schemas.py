@@ -110,6 +110,9 @@ class ExamOut(BaseModel):
     created_at: str
 
 
+Plan = Literal["free", "pro"]
+
+
 class UsageOut(BaseModel):
     exams_used: int
     exams_limit: int
@@ -118,12 +121,20 @@ class UsageOut(BaseModel):
     cost_usd_today: float
     usage_date: str
     resets_at: str
+    plan: Plan = "free"
 
 
 class MeOut(BaseModel):
     id: str
     email: Optional[str] = None
     is_admin: bool = False
+    plan: Plan = "free"
+    subscription_status: Optional[str] = None
+    current_period_end: Optional[str] = None
+
+
+class CheckoutOut(BaseModel):
+    url: str
 
 
 class AdminUserUsage(BaseModel):

@@ -41,3 +41,17 @@ class TestOpenRouterModels:
             openrouter_fallback_models="fallback/a, primary/model, fallback/b",
         )
         assert s.openrouter_models == ["primary/model", "fallback/a", "fallback/b"]
+
+    def test_pro_plan_appends_paid_models(self):
+        s = _settings(
+            openrouter_model="free/a",
+            openrouter_fallback_models="free/b",
+            openrouter_paid_fallback_models="paid/x, paid/y",
+        )
+        assert s.models_for_plan("free") == ["free/a", "free/b"]
+        assert s.models_for_plan("pro") == ["free/a", "free/b", "paid/x", "paid/y"]
+
+    def test_exam_limit_for_plan(self):
+        s = _settings(per_user_exam_limit_free=3, per_user_exam_limit_pro=50)
+        assert s.exam_limit_for_plan("free") == 3
+        assert s.exam_limit_for_plan("pro") == 50

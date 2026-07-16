@@ -15,6 +15,7 @@ def get_daily_usage(
     user: Annotated[CurrentUser, Depends(get_current_user)],
 ) -> UsageOut:
     snapshot = usage_service.get_usage(user.id, user.email)
+    plan = snapshot.plan if snapshot.plan in ("free", "pro") else "free"
     return UsageOut(
         exams_used=snapshot.exams_used,
         exams_limit=snapshot.exams_limit,
@@ -23,4 +24,5 @@ def get_daily_usage(
         cost_usd_today=round(snapshot.cost_usd_today, 6),
         usage_date=snapshot.usage_date.isoformat(),
         resets_at=snapshot.resets_at.isoformat(),
+        plan=plan,
     )

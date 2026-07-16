@@ -10,11 +10,11 @@ function Centered({ children }: { children: React.ReactNode }) {
     <div
       style={{
         minHeight: "calc(100vh - 64px)",
-        backgroundColor: "#ebf5ff",
+        backgroundColor: "var(--background)",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
-        color: "#93979f",
+        color: "var(--muted-foreground)",
         fontFamily: "'Geist','Inter',sans-serif",
       }}
     >

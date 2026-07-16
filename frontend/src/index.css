@@ -1,8 +1,8 @@
+@import "./styles/theme.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import "./styles/theme.css";
 
 html,
 body,
@@ -17,8 +17,8 @@ html {
 }
 
 body {
-  background-color: #ebf5ff;
-  color: #0a0d12;
+  background-color: var(--background);
+  color: var(--foreground);
   font-family: "Inter", "Geist", system-ui, sans-serif;
   @apply antialiased;
   text-wrap: pretty;
@@ -107,10 +107,9 @@ body {
   .dr-page { animation: none; }
 }
 
-/* Subtle outline on images so they read with consistent depth (Principle 11).
-   Pure black in light mode — never a tinted neutral. */
+/* Subtle outline on images so they read with consistent depth (Principle 11). */
 img {
-  outline: 1px solid rgba(0, 0, 0, 0.1);
+  outline: 1px solid var(--border);
   outline-offset: -1px;
 }
 
@@ -218,7 +217,7 @@ img {
 /* Backdrop blurs whatever is behind it. The `data-closing` attribute flips
    the element to its exit animation before it unmounts. */
 .mffb-backdrop {
-  background-color: rgba(10, 13, 18, 0.4);
+  background-color: var(--overlay);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   animation: mffb-backdrop-in 0.2s ease forwards;

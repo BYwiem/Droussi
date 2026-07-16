@@ -9,7 +9,7 @@ import ExamEditor from "../components/ExamEditor";
 import type { ExamRow, Exercise } from "../types";
 
 const pageStyle = {
-  backgroundColor: "#ebf5ff",
+  backgroundColor: "var(--background)",
   minHeight: "calc(100vh - 64px)",
   fontFamily: "'Geist','Inter',sans-serif",
 } as const;
@@ -65,7 +65,7 @@ export default function ExamView() {
   if (notFound) {
     return (
       <div style={pageStyle} className="px-4 py-10">
-        <p style={{ fontSize: 14, color: "#93979f" }}>Exam not found.</p>
+        <p style={{ fontSize: 14, color: "var(--muted-foreground)" }}>Exam not found.</p>
       </div>
     );
   }
@@ -73,7 +73,7 @@ export default function ExamView() {
   if (!exam) {
     return (
       <div style={pageStyle} className="px-4 py-10">
-        <p style={{ fontSize: 14, color: "#93979f" }}>Loading…</p>
+        <p style={{ fontSize: 14, color: "var(--muted-foreground)" }}>Loading…</p>
       </div>
     );
   }
@@ -84,7 +84,7 @@ export default function ExamView() {
         <div className="mb-6 flex items-center justify-between">
           <Link
             to="/outputs"
-            style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "#535862", textDecoration: "none" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text-secondary)", textDecoration: "none" }}
           >
             <ArrowLeft size={16} /> Back to outputs
           </Link>
@@ -96,8 +96,8 @@ export default function ExamView() {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: 6,
-                  backgroundColor: "#fff",
-                  color: "#535862",
+                  backgroundColor: "var(--card)",
+                  color: "var(--text-secondary)",
                   borderRadius: 9999,
                   padding: "8px 16px",
                   fontSize: 13,
@@ -117,8 +117,8 @@ export default function ExamView() {
                       display: "inline-flex",
                       alignItems: "center",
                       gap: 6,
-                      backgroundColor: "#181d27",
-                      color: "#fff",
+                      backgroundColor: "var(--primary)",
+                      color: "var(--primary-foreground)",
                       borderRadius: 9999,
                       padding: "8px 16px",
                       fontSize: 13,
@@ -139,9 +139,9 @@ export default function ExamView() {
         {exam.content ? (
           <div
             style={{
-              backgroundColor: "#fafdff",
+              backgroundColor: "var(--card)",
               borderRadius: 24,
-              border: "1px solid rgba(83,88,98,0.12)",
+              border: "1px solid var(--border)",
               padding: 24,
             }}
           >
@@ -157,7 +157,7 @@ export default function ExamView() {
             )}
           </div>
         ) : (
-          <p style={{ fontSize: 14, color: "#93979f" }}>
+          <p style={{ fontSize: 14, color: "var(--muted-foreground)" }}>
             Exam status: {exam.status}. No content yet.
           </p>
         )}

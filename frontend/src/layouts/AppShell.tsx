@@ -11,6 +11,7 @@ const PAGE_ROUTES: Record<string, string> = {
   exam: "/exam",
   repository: "/repository",
   outputs: "/outputs",
+  pricing: "/pricing",
   admin: "/admin",
 };
 
@@ -19,6 +20,7 @@ function routeToPage(pathname: string): string {
   if (pathname.startsWith("/exam")) return "exam";
   if (pathname.startsWith("/repository")) return "repository";
   if (pathname.startsWith("/outputs")) return "outputs";
+  if (pathname.startsWith("/pricing")) return "pricing";
   if (pathname.startsWith("/documents")) return "repository";
   if (pathname.startsWith("/admin")) return "admin";
   return "dashboard";
@@ -28,18 +30,19 @@ function AppShellInner() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { isAdmin } = useMe();
+  const { isAdmin, me } = useMe();
 
   if (!user) return null;
 
   const displayUser = toDisplayUser(user);
   const currentPage = routeToPage(location.pathname);
+  const plan = me?.plan === "pro" ? "pro" : "free";
 
   return (
     <div
       style={{
         minHeight: "100vh",
-        backgroundColor: "#ebf5ff",
+        backgroundColor: "var(--background)",
         fontFamily: "'Geist','Inter',sans-serif",
       }}
     >
@@ -47,6 +50,7 @@ function AppShellInner() {
         user={displayUser}
         currentPage={currentPage}
         isAdmin={isAdmin}
+        plan={plan}
         onNavigate={(page) => navigate(PAGE_ROUTES[page] ?? "/dashboard")}
         onLogout={() => void signOut()}
       />

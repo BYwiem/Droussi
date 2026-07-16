@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./hooks/useAuth";
 import { LanguageProvider } from "./contexts/LanguageContext";
+import { ThemeProvider } from "./contexts/ThemeContext";
 import AppShell from "./layouts/AppShell";
 import { ToastHost } from "./components/droussi/ToastHost";
 import LandingRoute from "./pages/routes/LandingRoute";
@@ -11,6 +12,7 @@ import ExamRoute from "./pages/routes/ExamRoute";
 import RepositoryRoute from "./pages/routes/RepositoryRoute";
 import OutputsRoute from "./pages/routes/OutputsRoute";
 import AdminRoute from "./pages/routes/AdminRoute";
+import PricingRoute from "./pages/routes/PricingRoute";
 import DocumentView from "./pages/DocumentView";
 import ExamBuilder from "./pages/ExamBuilder";
 import ExamView from "./pages/ExamView";
@@ -22,11 +24,11 @@ function Protected({ children }: { children: JSX.Element }) {
       <div
         style={{
           minHeight: "100vh",
-          backgroundColor: "#ebf5ff",
+          backgroundColor: "var(--background)",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          color: "#93979f",
+          color: "var(--muted-foreground)",
           fontFamily: "'Geist','Inter',sans-serif",
         }}
       >
@@ -40,6 +42,7 @@ function Protected({ children }: { children: JSX.Element }) {
 
 export default function App() {
   return (
+    <ThemeProvider>
     <LanguageProvider>
     <ToastHost />
     <Routes>
@@ -57,6 +60,7 @@ export default function App() {
         <Route path="/exam" element={<ExamRoute />} />
         <Route path="/repository" element={<RepositoryRoute />} />
         <Route path="/outputs" element={<OutputsRoute />} />
+        <Route path="/pricing" element={<PricingRoute />} />
         <Route path="/admin" element={<AdminRoute />} />
         <Route path="/documents/:id" element={<DocumentView />} />
         <Route path="/documents/:id/build" element={<ExamBuilder />} />
@@ -65,5 +69,6 @@ export default function App() {
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
     </LanguageProvider>
+    </ThemeProvider>
   );
 }

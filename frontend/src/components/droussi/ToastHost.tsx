@@ -70,10 +70,10 @@ export function ToastHost() {
             <AlertCircle size={18} color="#e05a00" />
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
-            <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 700, color: "#0a0d12", letterSpacing: "-0.02em", marginBottom: 2 }}>
+            <p style={{ fontFamily: "'Inter',sans-serif", fontSize: 13, fontWeight: 700, color: "var(--foreground)", letterSpacing: "-0.02em", marginBottom: 2 }}>
               Something went wrong
             </p>
-            <p style={{ fontSize: 13, color: "#535862", lineHeight: 1.45, letterSpacing: "-0.01em", wordBreak: "break-word" }}>
+            <p style={{ fontSize: 13, color: "var(--text-secondary)", lineHeight: 1.45, letterSpacing: "-0.01em", wordBreak: "break-word" }}>
               {toast.message}
             </p>
           </div>
@@ -96,7 +96,7 @@ export function ToastHost() {
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "rgba(224,90,0,0.12)")}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "transparent")}
           >
-            <X size={14} color="#93979f" />
+            <X size={14} color="var(--muted-foreground)" />
           </button>
         </div>
       ))}

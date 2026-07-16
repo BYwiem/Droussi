@@ -55,6 +55,22 @@ export async function deleteMyData(): Promise<void> {
   await apiFetch<void>("/api/me", { method: "DELETE" });
 }
 
+/** Start Lemon Squeezy checkout for Pro; redirects the browser to the hosted page. */
+export async function startCheckout(): Promise<void> {
+  const { url } = await apiFetch<{ url: string }>("/api/billing/checkout", {
+    method: "POST",
+  });
+  window.location.href = url;
+}
+
+/** Open the Lemon Squeezy customer portal (manage / cancel). */
+export async function openBillingPortal(): Promise<void> {
+  const { url } = await apiFetch<{ url: string }>("/api/billing/portal", {
+    method: "POST",
+  });
+  window.location.href = url;
+}
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit & { timeoutMs?: number } = {}

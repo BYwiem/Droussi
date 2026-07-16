@@ -51,6 +51,25 @@ git push
 - OpenRouter `:free` models are rate-limited — fine for a live demo, not a crowd.
 - Supabase free projects pause after ~1 week idle (one click to resume).
 
+## Billing (Lemon Squeezy) — enable when you're ready to charge
+1. Create a store + **Pro** subscription product/variant at https://lemonsqueezy.com (use **Test mode** first).
+2. Run migration `0008_billing.sql` in the Supabase SQL editor.
+3. In Render → Environment, set:
+   - `LEMONSQUEEZY_API_KEY`
+   - `LEMONSQUEEZY_STORE_ID`
+   - `LEMONSQUEEZY_PRO_VARIANT_ID`
+   - `LEMONSQUEEZY_WEBHOOK_SECRET` (you invent this string)
+   - `BILLING_SUCCESS_URL` = `https://<your-vercel-app>/pricing?checkout=success`
+   - `BILLING_CANCEL_URL` = `https://<your-vercel-app>/pricing?checkout=cancelled`
+4. In Lemon Squeezy → Settings → Webhooks, add:
+   - URL: `https://<your-render-url>/api/billing/webhook`
+   - Secret: same as `LEMONSQUEEZY_WEBHOOK_SECRET`
+   - Events: `subscription_created`, `subscription_updated`, `subscription_cancelled`,
+     `subscription_expired`, `subscription_resumed`, `subscription_paused`,
+     `subscription_unpaused`
+5. Smoke test in Test mode: sign in → Pricing → Upgrade → complete test checkout →
+   confirm `/api/me` shows `"plan":"pro"` and the daily limit is 50.
+
 ## Region, monitoring & scaling (production)
 - **Region:** `render.yaml` pins the API to `frankfurt` (EU) — close to the
   primary French/Arabic audience and keeps data in the EU for GDPR. Keep the

@@ -47,6 +47,10 @@ def _no_billing(monkeypatch):
         "app.services.exam_generator.usage_service.record_cost",
         lambda uid, cost: recorded.update(cost=(uid, cost)),
     )
+    monkeypatch.setattr(
+        "app.services.exam_generator.usage_service.get_user_plan",
+        lambda _uid: "free",
+    )
     return recorded
 
 

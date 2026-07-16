@@ -12,15 +12,19 @@ def _patch(monkeypatch, sb):
 
 
 class TestPerUserLimit:
-    def test_returns_configured_limit(self):
-        assert usage_service.per_user_limit() == 30
+    def test_free_plan_limit(self):
+        assert usage_service.per_user_limit(plan="free") == 3
+
+    def test_pro_plan_limit(self):
+        assert usage_service.per_user_limit(plan="pro") == 50
 
 
 class TestGetUsage:
     def test_reads_existing_daily_row(self, monkeypatch):
         sb = FakeSupabase(
             tables={
-                "app_users": [FakeResp(None)],
+                # register upsert + plan select
+                "app_users": [FakeResp(None), FakeResp({"plan": "free"})],
                 "user_daily_usage": [FakeResp({"exam_count": 3, "cost_usd": 0.05})],
             }
         )
@@ -28,12 +32,25 @@ class TestGetUsage:
         snap = usage_service.get_usage("user123", "u@test.com")
         assert snap.exams_used == 3
         assert snap.cost_usd_today == 0.05
-        assert snap.exams_limit == 30
+        assert snap.exams_limit == 3
+        assert snap.plan == "free"
+
+    def test_pro_user_gets_pro_limit(self, monkeypatch):
+        sb = FakeSupabase(
+            tables={
+                "app_users": [FakeResp(None), FakeResp({"plan": "pro"})],
+                "user_daily_usage": [FakeResp({"exam_count": 3, "cost_usd": 0.05})],
+            }
+        )
+        _patch(monkeypatch, sb)
+        snap = usage_service.get_usage("user123")
+        assert snap.exams_limit == 50
+        assert snap.plan == "pro"
 
     def test_creates_row_when_missing(self, monkeypatch):
         sb = FakeSupabase(
             tables={
-                "app_users": [FakeResp(None)],
+                "app_users": [FakeResp(None), FakeResp({"plan": "free"})],
                 "user_daily_usage": [FakeResp(None), FakeResp([{"exam_count": 0, "cost_usd": 0}])],
             }
         )
@@ -59,10 +76,13 @@ class TestEnsureCanGenerate:
     def test_raises_429_when_quota_reached(self, monkeypatch):
         sb = FakeSupabase(
             tables={
-                "app_users": [FakeResp(None)],
+                "app_users": [
+                    FakeResp(None),  # register
+                    FakeResp({"plan": "free"}),  # get_user_plan
+                ],
                 "user_daily_usage": [
                     FakeResp([{"cost_usd": 0.1}]),  # global_cost_today
-                    FakeResp({"exam_count": 30, "cost_usd": 0.1}),  # daily row
+                    FakeResp({"exam_count": 3, "cost_usd": 0.1}),  # free limit = 3
                 ],
             }
         )
@@ -74,7 +94,7 @@ class TestEnsureCanGenerate:
     def test_allows_when_under_quota(self, monkeypatch):
         sb = FakeSupabase(
             tables={
-                "app_users": [FakeResp(None)],
+                "app_users": [FakeResp(None), FakeResp({"plan": "free"})],
                 "user_daily_usage": [
                     FakeResp([{"cost_usd": 0.1}]),
                     FakeResp({"exam_count": 2, "cost_usd": 0.1}),

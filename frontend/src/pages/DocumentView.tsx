@@ -6,7 +6,7 @@ import { useAuth } from "../hooks/useAuth";
 import type { DocumentRow } from "../types";
 
 const pageStyle = {
-  backgroundColor: "#ebf5ff",
+  backgroundColor: "var(--background)",
   minHeight: "calc(100vh - 64px)",
   fontFamily: "'Geist','Inter',sans-serif",
 } as const;
@@ -42,7 +42,7 @@ export default function DocumentView() {
   if (notFound) {
     return (
       <div style={pageStyle} className="px-4 py-10">
-        <p style={{ fontSize: 14, color: "#93979f" }}>Document not found.</p>
+        <p style={{ fontSize: 14, color: "var(--muted-foreground)" }}>Document not found.</p>
       </div>
     );
   }
@@ -50,7 +50,7 @@ export default function DocumentView() {
   if (!doc) {
     return (
       <div style={pageStyle} className="px-4 py-10">
-        <p style={{ fontSize: 14, color: "#93979f" }}>Loading…</p>
+        <p style={{ fontSize: 14, color: "var(--muted-foreground)" }}>Loading…</p>
       </div>
     );
   }
@@ -61,7 +61,7 @@ export default function DocumentView() {
         <div className="mb-6 flex items-center justify-between">
           <Link
             to="/repository"
-            style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "#535862", textDecoration: "none" }}
+            style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "var(--text-secondary)", textDecoration: "none" }}
           >
             <ArrowLeft size={16} /> Back to repository
           </Link>
@@ -71,8 +71,8 @@ export default function DocumentView() {
               display: "inline-flex",
               alignItems: "center",
               gap: 6,
-              backgroundColor: "#181d27",
-              color: "#fff",
+              backgroundColor: "var(--primary)",
+              color: "var(--primary-foreground)",
               borderRadius: 9999,
               padding: "8px 16px",
               fontSize: 13,
@@ -88,7 +88,7 @@ export default function DocumentView() {
             fontFamily: "'Inter',sans-serif",
             fontSize: 24,
             fontWeight: 700,
-            color: "#0a0d12",
+            color: "var(--foreground)",
             letterSpacing: "-0.03em",
             marginBottom: 20,
           }}
@@ -99,8 +99,8 @@ export default function DocumentView() {
           style={{
             overflow: "hidden",
             borderRadius: 24,
-            border: "1px solid rgba(83,88,98,0.12)",
-            backgroundColor: "#fafdff",
+            border: "1px solid var(--border)",
+            backgroundColor: "var(--card)",
           }}
         >
           {previewUrl ? (

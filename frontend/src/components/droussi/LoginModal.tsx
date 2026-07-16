@@ -51,10 +51,10 @@ export function LoginModal({ onClose, onGoogleSignIn }: LoginModalProps) {
         onAnimationEnd={handleAnimationEnd}
         style={{
           position: "relative",
-          backgroundColor: "#fafdff",
+          backgroundColor: "var(--card)",
           borderRadius: 32,
-          border: "1px solid rgba(83,88,98,0.15)",
-          boxShadow: "rgba(4,69,144,0.2) 0px 24px 48px 8px",
+          border: "1px solid var(--border)",
+          boxShadow: "var(--shadow-strong) 0px 24px 48px 8px",
           padding: "40px 40px",
           width: "100%",
           maxWidth: 440,
@@ -72,7 +72,7 @@ export function LoginModal({ onClose, onGoogleSignIn }: LoginModalProps) {
             width: 32,
             height: 32,
             borderRadius: "50%",
-            backgroundColor: "#f6f7f8",
+            backgroundColor: "var(--muted)",
             border: "none",
             cursor: "pointer",
             display: "flex",
@@ -81,9 +81,9 @@ export function LoginModal({ onClose, onGoogleSignIn }: LoginModalProps) {
             transition: "background-color 0.12s ease, scale 0.15s ease-out",
           }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#ececf0")}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#f6f7f8")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--muted)")}
         >
-          <X size={16} color="#535862" />
+          <X size={16} color="var(--text-secondary)" />
         </button>
 
         <h2
@@ -91,14 +91,14 @@ export function LoginModal({ onClose, onGoogleSignIn }: LoginModalProps) {
             fontFamily: "'Inter',sans-serif",
             fontWeight: 600,
             fontSize: 22,
-            color: "#0a0d12",
+            color: "var(--foreground)",
             letterSpacing: "-0.03em",
             marginBottom: 8,
           }}
         >
           Welcome back
         </h2>
-        <p style={{ fontSize: 14, color: "#93979f", marginBottom: 28, letterSpacing: "-0.01em" }}>
+        <p style={{ fontSize: 14, color: "var(--muted-foreground)", marginBottom: 28, letterSpacing: "-0.01em" }}>
           Sign in with your Google account to continue
         </p>
 
@@ -111,8 +111,8 @@ export function LoginModal({ onClose, onGoogleSignIn }: LoginModalProps) {
             alignItems: "center",
             justifyContent: "center",
             gap: 12,
-            backgroundColor: "#181d27",
-            color: "#ffffff",
+            backgroundColor: "var(--primary)",
+            color: "var(--primary-foreground)",
             borderRadius: 9999,
             padding: "13px 24px",
             fontSize: 15,
@@ -123,7 +123,7 @@ export function LoginModal({ onClose, onGoogleSignIn }: LoginModalProps) {
             transition: "background-color 0.15s ease, scale 0.15s ease-out",
           }}
           onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = "#2d3444")}
-          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "#181d27")}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = "var(--primary)")}
         >
           <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
             <path d="M17.64 9.205c0-.639-.057-1.252-.164-1.841H9v3.481h4.844a4.14 4.14 0 01-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>

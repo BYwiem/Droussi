@@ -33,7 +33,13 @@ export function MeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo(
-    () => ({ me, loading, isAdmin: me?.is_admin ?? false }),
+    () => ({
+      me: me
+        ? { ...me, plan: me.plan === "pro" ? ("pro" as const) : ("free" as const) }
+        : null,
+      loading,
+      isAdmin: me?.is_admin ?? false,
+    }),
     [me, loading]
   );
 

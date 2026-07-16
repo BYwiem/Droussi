@@ -22,3 +22,4 @@ def test_get_daily_usage(client, monkeypatch):
     assert body["exams_limit"] == 30
     assert body["remaining"] == 26
     assert body["cost_usd_today"] == 0.012346  # rounded to 6dp
+    assert body["plan"] == "free"

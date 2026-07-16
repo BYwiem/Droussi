@@ -15,6 +15,7 @@ class UsageSnapshot:
     cost_usd_today: float
     usage_date: date
     resets_at: datetime
+    plan: str = "free"
 
     @property
     def remaining(self) -> int:
@@ -44,13 +45,34 @@ def register_user(user_id: str, email: str | None = None) -> None:
     record: dict = {"user_id": user_id}
     if email:
         record["email"] = email
+    # Don't overwrite plan/subscription fields on every upsert — only seed the
+    # identity columns. Existing billing columns stay intact.
     sb.table("app_users").upsert(record, on_conflict="user_id").execute()
 
 
-def per_user_limit() -> int:
-    """Fixed daily exam quota — the same for every user regardless of how many
-    users exist. Adding users no longer shrinks anyone's allowance."""
-    return max(get_settings().per_user_exam_limit, 0)
+def get_user_plan(user_id: str) -> str:
+    """Return the user's subscription plan ('free' | 'pro'). Defaults to free."""
+    sb = get_supabase()
+    row = (
+        sb.table("app_users")
+        .select("plan")
+        .eq("user_id", user_id)
+        .maybe_single()
+        .execute()
+    )
+    if row and row.data and row.data.get("plan"):
+        return str(row.data["plan"]).lower()
+    return "free"
+
+
+def per_user_limit(user_id: str | None = None, plan: str | None = None) -> int:
+    """Daily exam quota for a plan. When ``user_id`` is given and plan is not,
+    look the plan up. Falls back to the free-tier limit."""
+    settings = get_settings()
+    resolved = plan
+    if resolved is None and user_id:
+        resolved = get_user_plan(user_id)
+    return settings.exam_limit_for_plan(resolved or "free")
 
 
 def _get_or_create_daily_row(user_id: str, usage_date: date) -> dict:
@@ -98,14 +120,16 @@ def _get_or_create_daily_row(user_id: str, usage_date: date) -> dict:
 
 def get_usage(user_id: str, email: str | None = None) -> UsageSnapshot:
     register_user(user_id, email)
+    plan = get_user_plan(user_id)
     usage_date = _today_utc()
     row = _get_or_create_daily_row(user_id, usage_date)
     return UsageSnapshot(
         exams_used=int(row.get("exam_count") or 0),
-        exams_limit=per_user_limit(),
+        exams_limit=per_user_limit(plan=plan),
         cost_usd_today=float(row.get("cost_usd") or 0.0),
         usage_date=usage_date,
         resets_at=_resets_at_utc(usage_date),
+        plan=plan,
     )
 
 
