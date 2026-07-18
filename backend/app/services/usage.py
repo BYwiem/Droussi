@@ -45,9 +45,36 @@ def register_user(user_id: str, email: str | None = None) -> None:
     record: dict = {"user_id": user_id}
     if email:
         record["email"] = email
-    # Don't overwrite plan/subscription fields on every upsert — only seed the
-    # identity columns. Existing billing columns stay intact.
+    # Don't overwrite plan/subscription/admin fields on every upsert — only seed
+    # the identity columns. Existing billing/admin columns stay intact.
     sb.table("app_users").upsert(record, on_conflict="user_id").execute()
+
+
+def user_is_admin(user_id: str, email: str | None = None) -> bool:
+    """Return whether the user has super-admin access.
+
+    Authorization is the ``app_users.is_admin`` column. ``SUPER_ADMIN_EMAILS``
+    is only a bootstrap allowlist: matching emails are promoted to
+    ``is_admin=true`` (never auto-demoted), so access survives email-claim
+    spoofing attempts that are not also reflected in the DB flag.
+    """
+    register_user(user_id, email)
+    settings = get_settings()
+    sb = get_supabase()
+
+    if email and email.lower() in settings.super_admins:
+        sb.table("app_users").update({"is_admin": True}).eq(
+            "user_id", user_id
+        ).execute()
+
+    row = (
+        sb.table("app_users")
+        .select("is_admin")
+        .eq("user_id", user_id)
+        .maybe_single()
+        .execute()
+    )
+    return bool(row and row.data and row.data.get("is_admin"))
 
 
 def get_user_plan(user_id: str) -> str:
@@ -160,7 +187,7 @@ def ensure_global_capacity() -> None:
 
 
 def ensure_can_generate_exam(user_id: str, email: str | None = None) -> UsageSnapshot:
-    """Enforce both the per-user exam quota and the global cost breaker."""
+    """Soft quota check (read-only). Prefer ``reserve_exam_credit`` before LLM work."""
     ensure_global_capacity()
     usage = get_usage(user_id, email)
     if usage.exams_used >= usage.exams_limit:
@@ -172,6 +199,62 @@ def ensure_can_generate_exam(user_id: str, email: str | None = None) -> UsageSna
             ),
         )
     return usage
+
+
+def reserve_exam_credit(user_id: str, email: str | None = None) -> UsageSnapshot:
+    """Atomically consume one daily exam credit if under the plan limit.
+
+    Must be paired with ``refund_exam_credit`` when generation fails after
+    reservation (see migration 0009).
+    """
+    ensure_global_capacity()
+    register_user(user_id, email)
+    plan = get_user_plan(user_id)
+    limit = per_user_limit(plan=plan)
+    sb = get_supabase()
+    try:
+        result = sb.rpc(
+            "reserve_exam_credit",
+            {"p_user_id": user_id, "p_limit": int(limit)},
+        ).execute()
+    except Exception as e:
+        # PostgREST surfaces our P0001 as an HTTP error; treat any failure to
+        # reserve as quota exhausted rather than a 500 (same UX as soft check).
+        message = str(e).upper()
+        if "EXAM_QUOTA_EXCEEDED" in message or "P0001" in message:
+            usage = get_usage(user_id, email)
+            raise HTTPException(
+                status_code=429,
+                detail=(
+                    f"Daily exam limit reached ({usage.exams_used}/"
+                    f"{usage.exams_limit}). Your quota resets at midnight UTC."
+                ),
+            ) from e
+        raise
+
+    raw = result.data if result else None
+    if isinstance(raw, list):
+        raw = raw[0] if raw else None
+    used = int(raw) if raw is not None else limit
+    usage_date = _today_utc()
+    return UsageSnapshot(
+        exams_used=used,
+        exams_limit=limit,
+        cost_usd_today=0.0,
+        usage_date=usage_date,
+        resets_at=_resets_at_utc(usage_date),
+        plan=plan,
+    )
+
+
+def refund_exam_credit(user_id: str) -> None:
+    """Return one reserved exam credit after a failed generation."""
+    sb = get_supabase()
+    try:
+        sb.rpc("refund_exam_credit", {"p_user_id": user_id}).execute()
+    except Exception:
+        # Best-effort: never block the error path on a metering glitch.
+        return
 
 
 def _increment_daily(user_id: str, *, exams: int, cost_usd: float) -> None:
@@ -190,9 +273,13 @@ def _increment_daily(user_id: str, *, exams: int, cost_usd: float) -> None:
 
 
 def record_exam(user_id: str, cost_usd: float) -> None:
-    """One successful exam: consume a quota credit and bill its USD cost."""
+    """Bill the USD cost of a successful exam.
+
+    The daily exam credit is reserved earlier via ``reserve_exam_credit``; this
+    only accounts for spend toward the global breaker.
+    """
     register_user(user_id)
-    _increment_daily(user_id, exams=1, cost_usd=cost_usd)
+    _increment_daily(user_id, exams=0, cost_usd=cost_usd)
 
 
 def record_cost(user_id: str, cost_usd: float) -> None:

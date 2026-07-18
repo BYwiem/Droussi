@@ -15,7 +15,6 @@ from .db import get_supabase
 from .models.schemas import MeOut
 from .rate_limit import limiter
 from .routers import admin, billing, documents, exams, usage
-from .routers.admin import is_super_admin
 from .services import account
 from .services import billing as billing_service
 from .services import usage as usage_service
@@ -34,7 +33,18 @@ def _configure_logging() -> None:
 def create_app() -> FastAPI:
     _configure_logging()
     settings = get_settings()
-    app = FastAPI(title="Exam Generator API")
+    # Hide OpenAPI UIs on Render / production so the full route surface is not
+    # publicly browsable. Local/dev keeps /docs for convenience.
+    expose_docs = not (
+        os.environ.get("RENDER")
+        or os.environ.get("ENVIRONMENT", "").lower() == "production"
+    )
+    app = FastAPI(
+        title="Exam Generator API",
+        docs_url="/docs" if expose_docs else None,
+        redoc_url="/redoc" if expose_docs else None,
+        openapi_url="/openapi.json" if expose_docs else None,
+    )
 
     # Per-client HTTP rate limiting (see app/rate_limit.py). The middleware
     # applies default_limits to every route; hot/expensive routes add stricter
@@ -71,7 +81,7 @@ def create_app() -> FastAPI:
         user: Annotated[CurrentUser, Depends(get_current_user)],
         cfg: Annotated[Settings, Depends(get_settings)],
     ) -> MeOut:
-        usage_service.register_user(user.id, user.email)
+        is_admin = usage_service.user_is_admin(user.id, user.email)
         profile = billing_service.get_billing_profile(user.id)
         period_end = profile.get("current_period_end")
         if period_end is not None and not isinstance(period_end, str):
@@ -79,7 +89,7 @@ def create_app() -> FastAPI:
         return MeOut(
             id=user.id,
             email=user.email,
-            is_admin=is_super_admin(user.email, cfg),
+            is_admin=is_admin,
             plan=profile["plan"] if profile["plan"] in ("free", "pro") else "free",
             subscription_status=profile.get("subscription_status"),
             current_period_end=period_end,

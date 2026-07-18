@@ -24,7 +24,7 @@ git push
 - When prompted, fill the secret env vars:
   - `SUPABASE_URL`, `SUPABASE_SERVICE_KEY`, `SUPABASE_JWT_SECRET`
   - `OPENROUTER_API_KEY`  (from https://openrouter.ai/keys — free)
-  - `SUPER_ADMIN_EMAILS`  (your email)
+  - `SUPER_ADMIN_EMAILS`  (your email — bootstraps `app_users.is_admin`)
   - `ALLOWED_ORIGINS` → leave as `http://localhost:5173` for now, fix in step 4
   - `OPENROUTER_REFERER` → same as ALLOWED_ORIGINS
 - Deploy. Note the URL, e.g. `https://exam-generator-api.onrender.com`.

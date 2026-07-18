@@ -19,6 +19,33 @@ class TestPerUserLimit:
         assert usage_service.per_user_limit(plan="pro") == 50
 
 
+class TestUserIsAdmin:
+    def test_reads_db_flag(self, monkeypatch):
+        sb = FakeSupabase(
+            tables={
+                "app_users": [
+                    FakeResp(None),  # register upsert
+                    FakeResp({"is_admin": True}),
+                ]
+            }
+        )
+        _patch(monkeypatch, sb)
+        assert usage_service.user_is_admin("user123", "user@test.com") is True
+
+    def test_bootstraps_allowlisted_email(self, monkeypatch):
+        sb = FakeSupabase(
+            tables={
+                "app_users": [
+                    FakeResp(None),  # register
+                    FakeResp(None),  # promote update
+                    FakeResp({"is_admin": True}),
+                ]
+            }
+        )
+        _patch(monkeypatch, sb)
+        assert usage_service.user_is_admin("admin", "admin@test.com") is True
+
+
 class TestGetUsage:
     def test_reads_existing_daily_row(self, monkeypatch):
         sb = FakeSupabase(
@@ -105,16 +132,54 @@ class TestEnsureCanGenerate:
         assert usage_service.ensure_can_generate_exam("user123").exams_used == 2
 
 
+class TestReserveExamCredit:
+    def test_calls_reserve_rpc(self, monkeypatch):
+        sb = FakeSupabase(
+            tables={
+                "app_users": [FakeResp(None), FakeResp({"plan": "free"})],
+                "user_daily_usage": [FakeResp([{"cost_usd": 0.0}])],
+            },
+            rpcs={"reserve_exam_credit": [FakeResp(2)]},
+        )
+        _patch(monkeypatch, sb)
+        snap = usage_service.reserve_exam_credit("user123")
+        assert snap.exams_used == 2
+        assert sb.rpc_calls == [
+            ("reserve_exam_credit", {"p_user_id": "user123", "p_limit": 3})
+        ]
+
+    def test_quota_exceeded_raises_429(self, monkeypatch):
+        sb = FakeSupabase(
+            tables={
+                "app_users": [
+                    FakeResp(None),
+                    FakeResp({"plan": "free"}),
+                    FakeResp(None),
+                    FakeResp({"plan": "free"}),
+                ],
+                "user_daily_usage": [
+                    FakeResp([{"cost_usd": 0.0}]),
+                    FakeResp({"exam_count": 3, "cost_usd": 0.0}),
+                ],
+            },
+            rpcs={"reserve_exam_credit": [RuntimeError("EXAM_QUOTA_EXCEEDED")]},
+        )
+        _patch(monkeypatch, sb)
+        with pytest.raises(HTTPException) as exc:
+            usage_service.reserve_exam_credit("user123")
+        assert exc.value.status_code == 429
+
+
 class TestRecording:
-    def test_record_exam_increments(self, monkeypatch):
+    def test_record_exam_bills_cost_only(self, monkeypatch):
         sb = FakeSupabase(tables={"app_users": [FakeResp(None)]})
         _patch(monkeypatch, sb)
         usage_service.record_exam("user123", 0.01)
-        # The increment must go through the atomic RPC, not a read-modify-write.
+        # Credit was reserved earlier; success only bills USD spend.
         assert sb.rpc_calls == [
             (
                 "increment_daily_usage",
-                {"p_user_id": "user123", "p_exams": 1, "p_cost": 0.01},
+                {"p_user_id": "user123", "p_exams": 0, "p_cost": 0.01},
             )
         ]
 

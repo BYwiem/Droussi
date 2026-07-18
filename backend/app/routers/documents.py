@@ -1,5 +1,4 @@
 import logging
-import posixpath
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -9,6 +8,7 @@ from ..config import Settings, get_settings
 from ..db import get_supabase
 from ..models.schemas import DocumentOut, RegisterDocumentRequest
 from ..services.pdf_parser import extract_text
+from ..services.storage_paths import InvalidStoragePath, validate_user_storage_path
 
 
 logger = logging.getLogger(__name__)
@@ -30,37 +30,11 @@ def _is_allowed_mime(mime_type: str | None) -> bool:
     return mime in _ALLOWED_MIME_EXACT or mime.startswith(_ALLOWED_MIME_PREFIXES)
 
 
-def _validate_user_storage_path(storage_path: str, user_id: str) -> str:
-    """Return a storage path proven to live directly under the caller's folder.
-
-    A plain ``startswith(f"{user_id}/")`` check is not enough: the service-role
-    client bypasses RLS, so a traversal payload such as
-    ``{user_id}/../{victim_id}/secret.pdf`` would let one user read another
-    user's object. Normalize the path and require its first segment to equal the
-    caller's id with no ``..``, backslash, or absolute-path escapes.
-    """
-    raw = (storage_path or "").strip()
-    # Reject Windows separators, NUL bytes, and absolute paths outright.
-    if not raw or "\\" in raw or "\x00" in raw or raw.startswith("/"):
-        raise HTTPException(
-            status_code=403,
-            detail="Storage path must belong to the authenticated user.",
-        )
-    # posixpath.normpath collapses "a/../b" so traversal cannot be hidden.
-    normalized = posixpath.normpath(raw)
-    segments = normalized.split("/")
-    if (
-        normalized != raw
-        or ".." in segments
-        or segments[0] != user_id
-        or len(segments) < 2
-        or "" in segments
-    ):
-        raise HTTPException(
-            status_code=403,
-            detail="Storage path must belong to the authenticated user.",
-        )
-    return normalized
+def _require_user_storage_path(storage_path: str, user_id: str) -> str:
+    try:
+        return validate_user_storage_path(storage_path, user_id)
+    except InvalidStoragePath as e:
+        raise HTTPException(status_code=403, detail=str(e)) from e
 
 
 @router.post(
@@ -81,7 +55,7 @@ def register_document(
 ) -> DocumentOut:
     sb = get_supabase()
 
-    storage_path = _validate_user_storage_path(body.storage_path, user.id)
+    storage_path = _require_user_storage_path(body.storage_path, user.id)
 
     if not _is_allowed_mime(body.mime_type):
         raise HTTPException(
@@ -155,8 +129,18 @@ def delete_document(
     )
     if not row.data:
         raise HTTPException(status_code=404, detail="Not found")
+    # Re-validate before the service-role remove — a poisoned storage_path
+    # (written while client UPDATE was still allowed) must not delete another
+    # user's object.
     try:
-        sb.storage.from_(settings.documents_bucket).remove([row.data["storage_path"]])
-    except Exception:
-        pass
+        storage_path = validate_user_storage_path(
+            row.data.get("storage_path"), user.id
+        )
+    except InvalidStoragePath:
+        storage_path = None
+    if storage_path:
+        try:
+            sb.storage.from_(settings.documents_bucket).remove([storage_path])
+        except Exception:
+            pass
     sb.table("documents").delete().eq("id", doc_id).eq("user_id", user.id).execute()

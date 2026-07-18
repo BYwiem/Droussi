@@ -2,6 +2,8 @@ import io
 
 from pypdf import PdfReader
 
+from ..config import get_settings
+
 
 def extract_text(file_bytes: bytes, mime_type: str | None = None) -> str:
     """Extract text from a PDF (or fall back to UTF-8 decode for text files)."""
@@ -11,8 +13,9 @@ def extract_text(file_bytes: bytes, mime_type: str | None = None) -> str:
         except Exception:
             return ""
     reader = PdfReader(io.BytesIO(file_bytes))
+    max_pages = max(1, get_settings().max_pdf_pages)
     parts: list[str] = []
-    for page in reader.pages:
+    for page in reader.pages[:max_pages]:
         try:
             parts.append(page.extract_text() or "")
         except Exception:

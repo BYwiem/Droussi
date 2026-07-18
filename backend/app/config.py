@@ -22,7 +22,8 @@ class Settings(BaseSettings):
     # Account-wide safety cap: stop all generation once total spend for the
     # current UTC day reaches this many USD. Protects the shared credit pool.
     global_daily_cost_limit_usd: float = 5.0
-    # Comma-separated emails allowed to view the super-admin dashboard.
+    # Bootstrap allowlist: matching emails are promoted to app_users.is_admin.
+    # Runtime admin checks use the DB flag, not this list alone.
     super_admin_emails: str = ""
     openrouter_model: str = "deepseek/deepseek-chat-v3-0324:free"
     openrouter_fallback_models: str = (
@@ -57,6 +58,8 @@ class Settings(BaseSettings):
     # Reject documents whose downloaded bytes exceed this, before parsing them
     # into memory. Defaults to 15 MiB.
     max_document_bytes: int = 15 * 1024 * 1024
+    # Cap PDF page extraction to bound CPU/RAM on crafted documents.
+    max_pdf_pages: int = 100
 
     @property
     def supabase_jwt_issuer(self) -> str:

@@ -13,6 +13,7 @@ router = APIRouter(prefix="/api/admin", tags=["admin"])
 
 
 def is_super_admin(email: str | None, settings: Settings) -> bool:
+    """Allowlist membership only (bootstrap). Prefer ``usage_service.user_is_admin``."""
     return bool(email) and email.lower() in settings.super_admins
 
 
@@ -20,7 +21,13 @@ def require_admin(
     user: Annotated[CurrentUser, Depends(get_current_user)],
     settings: Annotated[Settings, Depends(get_settings)],
 ) -> CurrentUser:
-    if not is_super_admin(user.email, settings):
+    # Reject explicitly unverified emails; missing claim (older tokens/tests) is OK.
+    if user.email_verified is False:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Verified email required for super-admin access.",
+        )
+    if not usage_service.user_is_admin(user.id, user.email):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Super-admin access required.",

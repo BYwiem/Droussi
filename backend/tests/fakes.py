@@ -74,8 +74,16 @@ class FakeSupabase:
 
     def rpc(self, name, params=None):
         self.rpc_calls.append((name, params))
-        return FakeQuery(self._rpcs.get(name, []))
+        queue = self._rpcs.get(name, [])
+        if queue and isinstance(queue[0], Exception):
+            err = queue.pop(0)
 
+            class Boom:
+                def execute(self_inner):
+                    raise err
+
+            return Boom()
+        return FakeQuery(queue)
 
 class FakeResponse:
     def __init__(self, *, status_code=200, json_data=None, headers=None, text=""):

@@ -6,6 +6,7 @@ user across storage and the database in one call.
 import logging
 
 from ..config import Settings
+from .storage_paths import safe_user_storage_paths
 
 logger = logging.getLogger(__name__)
 
@@ -17,7 +18,8 @@ def delete_all_user_data(sb, settings: Settings, user_id: str) -> None:
     """Remove all of a user's storage objects and database rows.
 
     Best-effort on storage (a missing object shouldn't block the DB cleanup),
-    strict on the database rows.
+    strict on the database rows. Paths are re-validated so a poisoned
+    ``storage_path`` / ``export_path`` cannot delete another user's objects.
     """
     # 1. Uploaded documents in the documents bucket.
     docs = (
@@ -26,7 +28,10 @@ def delete_all_user_data(sb, settings: Settings, user_id: str) -> None:
         .eq("user_id", user_id)
         .execute()
     )
-    doc_paths = [d["storage_path"] for d in (docs.data or []) if d.get("storage_path")]
+    doc_paths = safe_user_storage_paths(
+        [d.get("storage_path") for d in (docs.data or [])],
+        user_id,
+    )
     if doc_paths:
         try:
             sb.storage.from_(settings.documents_bucket).remove(doc_paths)
@@ -37,9 +42,10 @@ def delete_all_user_data(sb, settings: Settings, user_id: str) -> None:
     exams = (
         sb.table("exams").select("export_path").eq("user_id", user_id).execute()
     )
-    export_paths = [
-        e["export_path"] for e in (exams.data or []) if e.get("export_path")
-    ]
+    export_paths = safe_user_storage_paths(
+        [e.get("export_path") for e in (exams.data or [])],
+        user_id,
+    )
     if export_paths:
         try:
             sb.storage.from_(settings.exports_bucket).remove(export_paths)

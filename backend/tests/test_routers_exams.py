@@ -66,7 +66,11 @@ class TestGenerate:
     @pytest.fixture(autouse=True)
     def _no_quota_check(self, monkeypatch):
         monkeypatch.setattr(
-            "app.routers.exams.usage_service.ensure_can_generate_exam",
+            "app.routers.exams.usage_service.reserve_exam_credit",
+            lambda *_a, **_k: None,
+        )
+        monkeypatch.setattr(
+            "app.routers.exams.usage_service.refund_exam_credit",
             lambda *_a, **_k: None,
         )
 
@@ -161,7 +165,11 @@ class TestGenerateAsync:
     @pytest.fixture(autouse=True)
     def _no_quota_check(self, monkeypatch):
         monkeypatch.setattr(
-            "app.routers.exams.usage_service.ensure_can_generate_exam",
+            "app.routers.exams.usage_service.reserve_exam_credit",
+            lambda *_a, **_k: None,
+        )
+        monkeypatch.setattr(
+            "app.routers.exams.usage_service.refund_exam_credit",
             lambda *_a, **_k: None,
         )
 
@@ -252,3 +260,26 @@ class TestDownloadUrl:
         _patch_sb(monkeypatch, sb)
         r = client.get("/api/exams/exam1/download")
         assert r.status_code == 500
+
+    def test_poisoned_export_path_rerenders_from_content(self, client, monkeypatch):
+        content = make_content().model_dump()
+        sb = FakeSupabase(
+            tables={
+                "exams": [
+                    FakeResp(
+                        {
+                            "export_format": "pdf",
+                            "export_path": "victim/stolen.pdf",
+                            "content": content,
+                        }
+                    )
+                ]
+            },
+            signed_url="https://signed.example/safe.pdf",
+        )
+        _patch_sb(monkeypatch, sb)
+        r = client.get("/api/exams/exam1/download")
+        assert r.status_code == 200
+        assert r.json()["url"] == "https://signed.example/safe.pdf"
+        assert sb.storage.uploaded
+        assert all(p.startswith("user123/") for p in sb.storage.uploaded)

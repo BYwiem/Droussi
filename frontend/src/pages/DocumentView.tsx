@@ -29,10 +29,14 @@ export default function DocumentView() {
         .maybeSingle();
       if (data) {
         setDoc(data as DocumentRow);
-        const { data: signed } = await supabase.storage
-          .from(DOCUMENTS_BUCKET)
-          .createSignedUrl((data as DocumentRow).storage_path, 3600);
-        setPreviewUrl(signed?.signedUrl ?? null);
+        const storagePath = (data as DocumentRow).storage_path;
+        // Only sign keys under the caller's folder (defense in depth vs poisoned paths).
+        if (storagePath.startsWith(`${user.id}/`) && !storagePath.includes("..")) {
+          const { data: signed } = await supabase.storage
+            .from(DOCUMENTS_BUCKET)
+            .createSignedUrl(storagePath, 3600);
+          setPreviewUrl(signed?.signedUrl ?? null);
+        }
       } else {
         setNotFound(true);
       }

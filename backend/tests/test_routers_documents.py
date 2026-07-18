@@ -116,3 +116,18 @@ class TestDeleteDocument:
         _patch_sb(monkeypatch, sb)
         r = client.delete("/api/documents/doc1")
         assert r.status_code == 204
+        assert sb.storage.removed == [["user123/notes.txt"]]
+
+    def test_skips_storage_remove_for_poisoned_path(self, client, monkeypatch):
+        sb = FakeSupabase(
+            tables={
+                "documents": [
+                    FakeResp({"storage_path": "victim/secret.pdf"}),
+                    FakeResp(None),
+                ]
+            }
+        )
+        _patch_sb(monkeypatch, sb)
+        r = client.delete("/api/documents/doc1")
+        assert r.status_code == 204
+        assert sb.storage.removed == []

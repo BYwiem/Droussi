@@ -13,9 +13,10 @@ class TestMe:
     def test_me_returns_current_user(self, client, monkeypatch):
         sb = FakeSupabase(
             tables={
-                # register_user upsert + get_billing_profile select
+                # register upsert + is_admin select + billing profile select
                 "app_users": [
                     FakeResp(None),
+                    FakeResp({"is_admin": False}),
                     FakeResp({"plan": "free", "subscription_status": None}),
                 ],
             }

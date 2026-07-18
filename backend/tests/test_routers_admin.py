@@ -33,15 +33,31 @@ def _patch_services(monkeypatch, key_status):
     monkeypatch.setattr("app.routers.admin.llm.get_key_status", fake_key_status)
 
 
-def test_non_admin_gets_403(client):
-    # Default fixture user is not a super-admin.
+def test_non_admin_gets_403(client, monkeypatch):
+    monkeypatch.setattr(
+        "app.routers.admin.usage_service.user_is_admin", lambda *_a, **_k: False
+    )
+    r = client.get("/api/admin/overview")
+    assert r.status_code == 403
+
+
+def test_unverified_email_gets_403(app, client, monkeypatch):
+    app.dependency_overrides[get_current_user] = lambda: CurrentUser(
+        id="admin", email="admin@test.com", email_verified=False
+    )
+    monkeypatch.setattr(
+        "app.routers.admin.usage_service.user_is_admin", lambda *_a, **_k: True
+    )
     r = client.get("/api/admin/overview")
     assert r.status_code == 403
 
 
 def test_overview_success_without_key_status(app, client, monkeypatch):
     app.dependency_overrides[get_current_user] = lambda: CurrentUser(
-        id="admin", email="admin@test.com"
+        id="admin", email="admin@test.com", email_verified=True
+    )
+    monkeypatch.setattr(
+        "app.routers.admin.usage_service.user_is_admin", lambda *_a, **_k: True
     )
     _patch_services(monkeypatch, key_status=None)
     r = client.get("/api/admin/overview")
@@ -54,7 +70,10 @@ def test_overview_success_without_key_status(app, client, monkeypatch):
 
 def test_overview_includes_key_status(app, client, monkeypatch):
     app.dependency_overrides[get_current_user] = lambda: CurrentUser(
-        id="admin", email="admin@test.com"
+        id="admin", email="admin@test.com", email_verified=True
+    )
+    monkeypatch.setattr(
+        "app.routers.admin.usage_service.user_is_admin", lambda *_a, **_k: True
     )
     _patch_services(
         monkeypatch,

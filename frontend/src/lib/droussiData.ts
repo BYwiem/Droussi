@@ -25,11 +25,26 @@ export function fileExt(filename: string): string {
   return filename.split(".").pop()?.toLowerCase() ?? "file";
 }
 
+const ALLOWED_UPLOAD_EXTS = new Set(["pdf", "txt", "md", "markdown", "text"]);
+
 export async function uploadDocument(
   userId: string,
   file: File
 ): Promise<DocumentRow> {
-  const ext = file.name.split(".").pop() ?? "bin";
+  const rawExt = file.name.split(".").pop()?.toLowerCase() ?? "";
+  const ext = ALLOWED_UPLOAD_EXTS.has(rawExt)
+    ? rawExt === "markdown" || rawExt === "text"
+      ? "txt"
+      : rawExt
+    : file.type === "application/pdf"
+      ? "pdf"
+      : file.type.startsWith("text/")
+        ? "txt"
+        : null;
+  if (!ext) {
+    throw new Error("Unsupported file type. Upload a PDF or a text document.");
+  }
+  // Object key is server-owned shape: {userId}/{uuid}.{allowlisted-ext}
   const path = `${userId}/${crypto.randomUUID()}.${ext}`;
 
   const { error: upErr } = await supabase.storage

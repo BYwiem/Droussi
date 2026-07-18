@@ -23,6 +23,8 @@ _jwks_fetched_at: float = 0.0
 class CurrentUser(BaseModel):
     id: str
     email: str | None = None
+    # True/False when the IdP asserted verification; None when the claim is absent.
+    email_verified: bool | None = None
 
 
 def _load_jwks(force: bool = False) -> list[dict]:
@@ -94,4 +96,16 @@ def get_current_user(request: Request) -> CurrentUser:
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or expired authentication token.",
         ) from e
-    return CurrentUser(id=user_id, email=payload.get("email"))
+    email_verified = payload.get("email_verified")
+    if email_verified is None:
+        meta = payload.get("user_metadata") or {}
+        if isinstance(meta, dict):
+            email_verified = meta.get("email_verified")
+    if email_verified is not None and not isinstance(email_verified, bool):
+        email_verified = str(email_verified).lower() in ("true", "1", "yes")
+
+    return CurrentUser(
+        id=user_id,
+        email=payload.get("email"),
+        email_verified=email_verified,
+    )

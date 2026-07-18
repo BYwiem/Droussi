@@ -1,10 +1,11 @@
 """Shared SlowAPI limiter.
 
 Render terminates TLS at a proxy, so ``request.client.host`` is the proxy IP.
-We derive the client key from the left-most ``X-Forwarded-For`` entry when
-present, falling back to the socket peer. Storage is in-process memory, which is
-adequate for a single free-tier instance; move to Redis if the API is scaled to
-multiple instances.
+We derive the client key from the *right-most* ``X-Forwarded-For`` entry when
+present (the hop appended by the trusted proxy), falling back to the socket
+peer. Using the left-most entry would let clients spoof the key and bypass
+limits. Storage is in-process memory, which is adequate for a single free-tier
+instance; move to Redis if the API is scaled to multiple instances.
 """
 import os
 
@@ -16,9 +17,10 @@ from starlette.requests import Request
 def client_key(request: Request) -> str:
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        first = forwarded.split(",")[0].strip()
-        if first:
-            return first
+        # Right-most hop is added by the reverse proxy; left-most is client-spoofable.
+        hops = [h.strip() for h in forwarded.split(",") if h.strip()]
+        if hops:
+            return hops[-1]
     return get_remote_address(request)
 
 

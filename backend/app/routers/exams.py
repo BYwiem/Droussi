@@ -18,6 +18,7 @@ from ..models.schemas import (
 )
 from ..services import exam_generator, exporter, jobs
 from ..services import usage as usage_service
+from ..services.storage_paths import InvalidStoragePath, validate_user_storage_path
 from ..models.schemas import ExamSpec
 
 
@@ -83,6 +84,7 @@ async def _run_generation_job(
         )
     except Exception:
         logger.exception("Async exam generation failed for exam %s", exam_id)
+        await run_in_threadpool(usage_service.refund_exam_credit, user_id)
         await _mark_exam_error(sb, exam_id, user_id)
 
 
@@ -213,12 +215,6 @@ async def _prepare_generation(
     if not owned or not owned.data:
         raise HTTPException(status_code=404, detail="Exam not found")
 
-    # Short-circuit on quota / global budget before loading documents or calling
-    # the LLM, so a user who is already over the limit can't force expensive work.
-    await run_in_threadpool(
-        usage_service.ensure_can_generate_exam, user.id, user.email
-    )
-
     docs = await run_in_threadpool(
         lambda: sb.table("documents")
         .select("id, extracted_text")
@@ -239,6 +235,13 @@ async def _prepare_generation(
             status_code=422,
             detail="Documents have no extracted text — cannot generate exam.",
         )
+
+    # Reserve a daily credit atomically *after* preconditions pass so a failed
+    # validation cannot consume quota, and concurrent generates cannot all slip
+    # under a soft check-then-act race.
+    await run_in_threadpool(
+        usage_service.reserve_exam_credit, user.id, user.email
+    )
 
     await run_in_threadpool(
         lambda: sb.table("exams")
@@ -359,7 +362,36 @@ async def generate(
             ),
             timeout=180,
         )
+        export_path = await run_in_threadpool(
+            _render_and_upload,
+            sb,
+            settings,
+            user_id=user.id,
+            exam_id=exam_id,
+            content=content,
+            export_format=body.spec.export_format,
+        )
+
+        updated = await run_in_threadpool(
+            lambda: sb.table("exams")
+            .update(
+                {
+                    "title": content.title,
+                    "content": content.model_dump(),
+                    "export_format": body.spec.export_format,
+                    "export_path": export_path,
+                    "status": "ready",
+                }
+            )
+            .eq("id", exam_id)
+            .eq("user_id", user.id)
+            .execute()
+        )
+        if not updated.data:
+            raise HTTPException(status_code=500, detail="Update failed")
+        return ExamOut.model_validate(updated.data[0])
     except TimeoutError as e:
+        await run_in_threadpool(usage_service.refund_exam_credit, user.id)
         await _mark_exam_error(sb, exam_id, user.id)
         raise HTTPException(
             status_code=504,
@@ -368,41 +400,17 @@ async def generate(
                 "Try again with fewer exercises or a shorter document."
             ),
         ) from e
+    except HTTPException:
+        await run_in_threadpool(usage_service.refund_exam_credit, user.id)
+        await _mark_exam_error(sb, exam_id, user.id)
+        raise
     except Exception as e:
+        await run_in_threadpool(usage_service.refund_exam_credit, user.id)
         await _mark_exam_error(sb, exam_id, user.id)
         logger.exception("Exam generation failed for exam %s", exam_id)
         raise HTTPException(
             status_code=502, detail="Exam generation failed."
         ) from e
-
-    export_path = await run_in_threadpool(
-        _render_and_upload,
-        sb,
-        settings,
-        user_id=user.id,
-        exam_id=exam_id,
-        content=content,
-        export_format=body.spec.export_format,
-    )
-
-    updated = await run_in_threadpool(
-        lambda: sb.table("exams")
-        .update(
-            {
-                "title": content.title,
-                "content": content.model_dump(),
-                "export_format": body.spec.export_format,
-                "export_path": export_path,
-                "status": "ready",
-            }
-        )
-        .eq("id", exam_id)
-        .eq("user_id", user.id)
-        .execute()
-    )
-    if not updated.data:
-        raise HTTPException(status_code=500, detail="Update failed")
-    return ExamOut.model_validate(updated.data[0])
 
 
 @router.put(
@@ -504,11 +512,19 @@ def download_url(
     stored_format = data.get("export_format") or "pdf"
     fmt = export_format or stored_format
 
+    export_path: str | None = None
     if fmt == stored_format and data.get("export_path"):
-        # The format rendered at generation — reuse the stored file.
-        export_path = data["export_path"]
-    elif data.get("content"):
-        # A different format — render it now from the saved exam content.
+        # Reuse the stored file only when the path still belongs to the caller.
+        # A poisoned export_path must not be signed with the service role.
+        try:
+            export_path = validate_user_storage_path(
+                data.get("export_path"), user.id
+            )
+        except InvalidStoragePath:
+            export_path = None
+
+    if export_path is None and data.get("content"):
+        # Missing/invalid stored path, or a different format — render on demand.
         content = ExamContent.model_validate(data["content"])
         export_path = _render_and_upload(
             sb,
@@ -519,7 +535,7 @@ def download_url(
             export_format=fmt,
             stable=True,
         )
-    else:
+    if not export_path:
         raise HTTPException(
             status_code=404,
             detail=f"{fmt.upper()} export isn't available for this exam.",

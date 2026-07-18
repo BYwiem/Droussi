@@ -7,8 +7,12 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+MIGRATIONS_DIR = ROOT / "supabase" / "migrations"
+# Apply only the security lockdown migrations (idempotent / additive).
+# Do not re-run the full 0001–0008 history against an already-provisioned DB.
 MIGRATIONS = [
-    ROOT / "scripts" / "apply_usage_migration.sql",
+    MIGRATIONS_DIR / "0009_lock_down_client_mutations.sql",
+    MIGRATIONS_DIR / "0010_admin_role.sql",
 ]
 
 
@@ -37,6 +41,10 @@ def main() -> int:
         )
         return 1
 
+    if not MIGRATIONS:
+        print(f"No SQL files found in {MIGRATIONS_DIR}")
+        return 1
+
     try:
         import psycopg2
     except ImportError:
@@ -57,7 +65,7 @@ def main() -> int:
                 sql = path.read_text(encoding="utf-8")
                 print(f"Applying {path.name}…")
                 cur.execute(sql)
-                print(f"  OK")
+                print("  OK")
     finally:
         conn.close()
 
