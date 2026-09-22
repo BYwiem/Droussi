@@ -52,28 +52,26 @@ export function NavBar({
     { id: "repository", label: t("nav_repository") },
     { id: "outputs", label: t("nav_outputs") },
     { id: "pricing", label: t("nav_pricing") },
-    ...(isAdmin ? [{ id: "admin", label: "Admin" }] : []),
+    ...(isAdmin ? [{ id: "admin", label: t("nav_admin") }] : []),
   ];
 
   const planLabel = plan === "pro" ? t("plan_pro") : t("plan_free");
+  // French/Arabic labels are longer — tighten link padding and font slightly.
+  const denseNav = lang === "fr" || lang === "ar";
+  const linkPad = denseNav ? "5px 9px" : "6px 12px";
+  const linkSize = denseNav ? 13 : 14;
 
   return (
     <nav
       style={{ backgroundColor: "var(--nav-bg)", backdropFilter: "blur(12px)" }}
       className="sticky top-0 z-50 border-b border-[color:var(--border)]"
     >
-      <div className="max-w-[1200px] mx-auto px-6 h-16 flex items-center justify-between">
+      <div className="max-w-[1280px] mx-auto px-4 lg:px-6 h-16 flex items-center gap-3">
         {/* Logo */}
         <button
           onClick={() => onNavigate("dashboard")}
-          className="flex items-center gap-2.5 group"
+          className="flex items-center gap-2.5 group shrink-0"
         >
-          {/* <div
-            style={{ backgroundColor: "var(--brand)", borderRadius: 10 }}
-            className="w-8 h-8 flex items-center justify-center shadow-sm"
-          >
-            <BookOpen size={16} color="#fff" strokeWidth={2.5} />
-          </div> */}
           <span
             style={{
               fontFamily: "'Inter', sans-serif",
@@ -87,34 +85,37 @@ export function NavBar({
           </span>
         </button>
 
-        {/* Desktop Nav Links */}
+        {/* Desktop Nav Links — centered, can scroll if needed */}
         {user && (
-          <div className="hidden md:flex items-center gap-1">
-            {navLinks.map((link) => (
-              <button
-                key={link.id}
-                onClick={() => onNavigate(link.id)}
-                style={{
-                  fontFamily: "'Geist', 'Inter', sans-serif",
-                  fontSize: 14,
-                  fontWeight: 500,
-                  color: currentPage === link.id ? "var(--foreground)" : "var(--text-secondary)",
-                  letterSpacing: "-0.01em",
-                  backgroundColor: currentPage === link.id ? "var(--secondary)" : "transparent",
-                  borderRadius: 9999,
-                  padding: "6px 14px",
-                  transition: "background-color 0.15s ease, color 0.15s ease",
-                }}
-                className="dr-hover-secondary"
-              >
-                {link.label}
-              </button>
-            ))}
+          <div className="hidden lg:flex flex-1 items-center justify-center min-w-0 overflow-x-auto">
+            <div className="flex items-center gap-0.5">
+              {navLinks.map((link) => (
+                <button
+                  key={link.id}
+                  onClick={() => onNavigate(link.id)}
+                  style={{
+                    fontFamily: "'Geist', 'Inter', sans-serif",
+                    fontSize: linkSize,
+                    fontWeight: 500,
+                    color: currentPage === link.id ? "var(--foreground)" : "var(--text-secondary)",
+                    letterSpacing: "-0.01em",
+                    backgroundColor: currentPage === link.id ? "var(--secondary)" : "transparent",
+                    borderRadius: 9999,
+                    padding: linkPad,
+                    whiteSpace: "nowrap",
+                    transition: "background-color 0.15s ease, color 0.15s ease",
+                  }}
+                  className="dr-hover-secondary"
+                >
+                  {link.label}
+                </button>
+              ))}
+            </div>
           </div>
         )}
 
         {/* Right side */}
-        <div className="flex items-center gap-3">
+        <div className={`flex items-center gap-2 shrink-0 ${user ? "" : "ml-auto"}`}>
           {user && (
             <button
               type="button"
@@ -157,7 +158,7 @@ export function NavBar({
                 style={{
                   fontSize: 12,
                   fontWeight: 600,
-                  padding: "4px 10px",
+                  padding: "4px 8px",
                   borderRadius: 9999,
                   border: "none",
                   cursor: "pointer",
@@ -173,7 +174,7 @@ export function NavBar({
             ))}
           </div>
 
-          {extra && <div className="hidden lg:block">{extra}</div>}
+          {extra && <div className="hidden xl:block">{extra}</div>}
           {user ? (
             <div className="relative">
               <button
@@ -181,7 +182,7 @@ export function NavBar({
                 aria-haspopup="menu"
                 aria-expanded={profileOpen}
                 aria-label="Account menu"
-                className="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-[var(--secondary)]/60 transition-colors"
+                className="flex items-center gap-2 px-2 sm:px-3 py-1.5 rounded-full hover:bg-[var(--secondary)]/60 transition-colors"
               >
                 <UserInitialsAvatar name={user.name} size={32} />
                 <span
@@ -192,11 +193,11 @@ export function NavBar({
                     color: "var(--foreground)",
                     letterSpacing: "-0.01em",
                   }}
-                  className="hidden sm:block"
+                  className="hidden xl:block"
                 >
                   {user.name.split(" ")[0]}
                 </span>
-                <ChevronDown size={14} color="var(--text-secondary)" />
+                <ChevronDown size={14} color="var(--text-secondary)" className="hidden sm:block" />
               </button>
               {profileOpen && (
                 <div
@@ -259,17 +260,17 @@ export function NavBar({
               }}
               className="hover:bg-[#2d3444] transition-colors"
             >
-              Sign in
+              {t("sign_in")}
             </button>
           )}
 
-          {/* Mobile menu toggle */}
+          {/* Mobile / tablet menu toggle (< lg) */}
           {user && (
             <button
               onClick={() => setMenuOpen(!menuOpen)}
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-expanded={menuOpen}
-              className="md:hidden p-2 rounded-xl hover:bg-[var(--secondary)]/60 transition-colors"
+              className="lg:hidden p-2 rounded-xl hover:bg-[var(--secondary)]/60 transition-colors"
             >
               {menuOpen ? <X size={20} color="var(--foreground)" /> : <Menu size={20} color="var(--foreground)" />}
             </button>
@@ -277,11 +278,11 @@ export function NavBar({
         </div>
       </div>
 
-      {/* Mobile menu */}
+      {/* Mobile / tablet menu */}
       {user && menuOpen && (
         <div
           style={{ backgroundColor: "var(--card)", borderTop: "1px solid var(--border)" }}
-          className="md:hidden px-6 pb-4 pt-2"
+          className="lg:hidden px-6 pb-4 pt-2"
         >
           {navLinks.map((link) => (
             <button

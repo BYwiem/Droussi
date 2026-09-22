@@ -66,6 +66,7 @@ async def _run_generation_job(
             exam_id=exam_id,
             content=content,
             export_format=spec.export_format,
+            spec=spec,
         )
         await run_in_threadpool(
             lambda: sb.table("exams")
@@ -88,6 +89,20 @@ async def _run_generation_job(
         await _mark_exam_error(sb, exam_id, user_id)
 
 
+def _stored_spec(raw) -> ExamSpec | None:
+    """Best-effort parse of the spec JSON saved on an exam row.
+
+    Older rows may predate newer spec fields; a spec that no longer validates
+    simply means the export falls back to the generic layout.
+    """
+    if not isinstance(raw, dict):
+        return None
+    try:
+        return ExamSpec.model_validate(raw)
+    except ValueError:
+        return None
+
+
 def _render_and_upload(
     sb,
     settings: Settings,
@@ -97,21 +112,25 @@ def _render_and_upload(
     content: ExamContent,
     export_format: str,
     stable: bool = False,
+    spec: ExamSpec | None = None,
 ) -> str:
     """Render the exam to the requested format, upload it, return the storage path.
+
+    ``spec`` (when available) drives the paper layout: language / RTL, the
+    Tunisian header block and exam-type heading.
 
     When ``stable`` is set the file is stored at a fixed per-exam-per-format path
     (and upserted), so on-demand downloads of a format don't accumulate a new
     object on every click.
     """
     if export_format == "docx":
-        export_bytes = exporter.to_docx(content)
+        export_bytes = exporter.to_docx(content, spec)
         ext = "docx"
         content_type = (
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
         )
     else:
-        export_bytes = exporter.to_pdf(content)
+        export_bytes = exporter.to_pdf(content, spec)
         ext = "pdf"
         content_type = "application/pdf"
 
@@ -370,6 +389,7 @@ async def generate(
             exam_id=exam_id,
             content=content,
             export_format=body.spec.export_format,
+            spec=body.spec,
         )
 
         updated = await run_in_threadpool(
@@ -432,7 +452,7 @@ def update_content(
     sb = get_supabase()
     existing = (
         sb.table("exams")
-        .select("export_format")
+        .select("export_format, spec")
         .eq("id", exam_id)
         .eq("user_id", user.id)
         .maybe_single()
@@ -455,6 +475,7 @@ def update_content(
         exam_id=exam_id,
         content=content,
         export_format=export_format,
+        spec=_stored_spec(existing.data.get("spec")),
     )
 
     updated = (
@@ -499,7 +520,7 @@ def download_url(
     sb = get_supabase()
     row = (
         sb.table("exams")
-        .select("content, export_format, export_path")
+        .select("content, export_format, export_path, spec")
         .eq("id", exam_id)
         .eq("user_id", user.id)
         .maybe_single()
@@ -534,6 +555,7 @@ def download_url(
             content=content,
             export_format=fmt,
             stable=True,
+            spec=_stored_spec(data.get("spec")),
         )
     if not export_path:
         raise HTTPException(

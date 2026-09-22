@@ -1,8 +1,24 @@
 import { CheckCircle, ChevronDown, ChevronUp, Clock, Download, FileText, FolderOpen, Loader2, Sparkles, X } from "lucide-react";
-import { useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import { useLanguage } from "../../contexts/LanguageContext";
+import {
+  CYCLES,
+  EXAM_TYPES_BY_CYCLE,
+  LEVELS_BY_CYCLE,
+  SECTIONS,
+  cycleLabel,
+  defaultDuration,
+  examTypeLabel,
+  levelLabel,
+  sectionApplies,
+  sectionLabel,
+  type EducationCycle,
+  type ExamType,
+  type SchoolLevel,
+  type Section,
+} from "../../lib/curriculum";
 import { createT } from "../../lib/i18n";
-import { subjectStyle } from "../../lib/subjects";
+import { SUBJECTS, subjectStyle } from "../../lib/subjects";
 import { DocumentPickerModal } from "./DocumentPickerModal";
 
 interface ExamFile {
@@ -30,24 +46,34 @@ interface Question {
   answer?: string;
 }
 
+export type GenerateExamParams = {
+  documentIds: string[];
+  examTitle: string;
+  duration: number;
+  numMCQ: number;
+  numShort: number;
+  numEssay: number;
+  marksMCQ: number;
+  marksShort: number;
+  marksEssay: number;
+  difficulty: "easy" | "medium" | "hard";
+  language: "en" | "fr" | "ar";
+  examType: ExamType;
+  level: SchoolLevel | "";
+  section: Section | "";
+  subject: string;
+  trimester: 1 | 2 | 3 | "";
+  schoolName: string;
+  teacherName: string;
+  schoolYear: string;
+};
+
 interface ExamGeneratorProps {
   availableFiles: ExamFile[];
   initialSelectedIds?: string[];
   disabled?: boolean;
   onExamGenerated: (exam: GeneratedExam) => void;
-  onGenerate?: (params: {
-    documentIds: string[];
-    examTitle: string;
-    duration: number;
-    numMCQ: number;
-    numShort: number;
-    numEssay: number;
-    marksMCQ: number;
-    marksShort: number;
-    marksEssay: number;
-    difficulty: "easy" | "medium" | "hard";
-    language: "en" | "fr";
-  }) => Promise<GeneratedExam>;
+  onGenerate?: (params: GenerateExamParams) => Promise<GeneratedExam>;
   onDownload?: (examId: string, format: string) => void | Promise<void>;
   onViewExam?: (examId: string) => void;
   /** Shown when the daily quota is exhausted — typically navigate to /pricing. */
@@ -55,6 +81,25 @@ interface ExamGeneratorProps {
 }
 
 const MAX_MATERIALS = 5;
+
+const fieldStyle: CSSProperties = {
+  width: "100%",
+  padding: "9px 12px",
+  borderRadius: 10,
+  border: "1px solid var(--border-strong)",
+  backgroundColor: "var(--muted)",
+  fontSize: 13,
+  color: "var(--foreground)",
+  fontFamily: "'Geist','Inter',sans-serif",
+  outline: "none",
+  boxSizing: "border-box",
+};
+
+function currentSchoolYear(): string {
+  const now = new Date();
+  const y = now.getFullYear();
+  return now.getMonth() >= 8 ? `${y}-${y + 1}` : `${y - 1}-${y}`;
+}
 
 const TYPE_LABELS: Record<string, { label: string; color: string; bg: string }> = {
   mcq: { label: "MCQ", color: "var(--brand)", bg: "var(--secondary)" },
@@ -119,6 +164,7 @@ export function ExamGenerator({
 }: ExamGeneratorProps) {
   const { lang } = useLanguage();
   const t = createT(lang);
+  const uiLang = lang === "ar" || lang === "fr" ? lang : "en";
 
   const [selectedFiles, setSelectedFiles] = useState<string[]>(
     initialSelectedIds?.length
@@ -127,7 +173,16 @@ export function ExamGenerator({
         ? [availableFiles[0].id]
         : []
   );
-  const [examTitle, setExamTitle] = useState("Chapter Exam");
+  const [examTitle, setExamTitle] = useState("");
+  const [cycle, setCycle] = useState<EducationCycle | "">("");
+  const [level, setLevel] = useState<SchoolLevel | "">("");
+  const [section, setSection] = useState<Section | "">("");
+  const [examType, setExamType] = useState<ExamType>("generic");
+  const [subject, setSubject] = useState("");
+  const [trimester, setTrimester] = useState<1 | 2 | 3 | "">("");
+  const [schoolName, setSchoolName] = useState("");
+  const [teacherName, setTeacherName] = useState("");
+  const [schoolYear, setSchoolYear] = useState(currentSchoolYear);
   const [duration, setDuration] = useState(60);
   const [numMCQ, setNumMCQ] = useState(4);
   const [numShort, setNumShort] = useState(2);
@@ -136,11 +191,24 @@ export function ExamGenerator({
   const [marksShort, setMarksShort] = useState(4);
   const [marksEssay, setMarksEssay] = useState(8);
   const [difficulty, setDifficulty] = useState<"easy" | "medium" | "hard">("medium");
-  const [examLanguage, setExamLanguage] = useState<"en" | "fr">("en");
+  const [examLanguage, setExamLanguage] = useState<"en" | "fr" | "ar">(
+    lang === "ar" || lang === "fr" ? lang : "fr"
+  );
   const [generating, setGenerating] = useState(false);
   const [generatedExam, setGeneratedExam] = useState<GeneratedExam | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  const levels = useMemo(
+    () => (cycle ? LEVELS_BY_CYCLE[cycle] : []),
+    [cycle]
+  );
+  const examTypes = useMemo(
+    () => (cycle ? EXAM_TYPES_BY_CYCLE[cycle] : (["generic"] as ExamType[])),
+    [cycle]
+  );
+  const showSection = sectionApplies(level);
+  const isHigherEd = cycle === "superieur";
 
   const totalMarks = numMCQ * marksMCQ + numShort * marksShort + numEssay * marksEssay;
   const selectedDocs = availableFiles.filter((f) => selectedFiles.includes(f.id));
@@ -149,13 +217,32 @@ export function ExamGenerator({
     setSelectedFiles((prev) => prev.filter((x) => x !== id));
   };
 
+  const handleCycleChange = (next: EducationCycle | "") => {
+    setCycle(next);
+    setLevel("");
+    setSection("");
+    if (next) {
+      const types = EXAM_TYPES_BY_CYCLE[next];
+      const nextType = types.includes(examType) ? examType : types[0];
+      setExamType(nextType);
+      setDuration(defaultDuration(nextType, next));
+    } else {
+      setExamType("generic");
+    }
+  };
+
+  const handleExamTypeChange = (next: ExamType) => {
+    setExamType(next);
+    setDuration(defaultDuration(next, cycle || null));
+  };
+
   const handleGenerate = () => {
     if (!onGenerate) return;
     setGenerating(true);
     setError(null);
     void onGenerate({
       documentIds: selectedFiles,
-      examTitle,
+      examTitle: examTitle || t("eg_default_title"),
       duration,
       numMCQ,
       numShort,
@@ -165,6 +252,14 @@ export function ExamGenerator({
       marksEssay,
       difficulty,
       language: examLanguage,
+      examType,
+      level,
+      section: showSection ? section : "",
+      subject,
+      trimester,
+      schoolName,
+      teacherName,
+      schoolYear,
     })
       .then((exam) => {
         setGeneratedExam(exam);
@@ -181,6 +276,14 @@ export function ExamGenerator({
     { val: "medium" as const, label: t("eg_medium") },
     { val: "hard" as const, label: t("eg_hard") },
   ];
+
+  const labelStyle: CSSProperties = {
+    fontSize: 12,
+    fontWeight: 600,
+    color: "var(--text-secondary)",
+    display: "block",
+    marginBottom: 6,
+  };
 
   return (
     <div style={{ backgroundColor: "var(--background)", minHeight: "calc(100vh - 64px)", fontFamily: "'Geist','Inter',sans-serif" }} className="px-4 py-10">
@@ -289,30 +392,160 @@ export function ExamGenerator({
               )}
             </div>
 
+            {/* Context: cycle / level / type (school + faculté) */}
+            <div style={{ backgroundColor: "var(--card)", borderRadius: 24, border: "1px solid var(--border)", padding: 24 }}>
+              <h3 style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)", letterSpacing: "-0.02em", marginBottom: 4 }}>{t("eg_context")}</h3>
+              <p style={{ fontSize: 12, color: "var(--muted-foreground)", marginBottom: 16 }}>{t("eg_context_hint")}</p>
+              <div className="flex flex-col gap-4">
+                <div>
+                  <label style={labelStyle}>{t("eg_cycle")}</label>
+                  <select
+                    value={cycle}
+                    onChange={(e) => handleCycleChange(e.target.value as EducationCycle | "")}
+                    style={fieldStyle}
+                  >
+                    <option value="">{t("eg_cycle_any")}</option>
+                    {CYCLES.map((c) => (
+                      <option key={c} value={c}>{cycleLabel(uiLang, c)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                {cycle && (
+                  <div>
+                    <label style={labelStyle}>{t("eg_level")}</label>
+                    <select
+                      value={level}
+                      onChange={(e) => {
+                        const next = e.target.value as SchoolLevel | "";
+                        setLevel(next);
+                        if (!sectionApplies(next)) setSection("");
+                      }}
+                      style={fieldStyle}
+                    >
+                      <option value="">{t("eg_level_any")}</option>
+                      {levels.map((lv) => (
+                        <option key={lv} value={lv}>{levelLabel(uiLang, lv)}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                {showSection && (
+                  <div>
+                    <label style={labelStyle}>{t("eg_section")}</label>
+                    <select
+                      value={section}
+                      onChange={(e) => setSection(e.target.value as Section | "")}
+                      style={fieldStyle}
+                    >
+                      <option value="">{t("eg_section_any")}</option>
+                      {SECTIONS.map((s) => (
+                        <option key={s} value={s}>{sectionLabel(uiLang, s)}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
+                <div>
+                  <label style={labelStyle}>{t("eg_exam_type")}</label>
+                  <select
+                    value={examType}
+                    onChange={(e) => handleExamTypeChange(e.target.value as ExamType)}
+                    style={fieldStyle}
+                  >
+                    {examTypes.map((et) => (
+                      <option key={et} value={et}>{examTypeLabel(uiLang, et)}</option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>{t("eg_subject")}</label>
+                  <input
+                    list="droussi-subjects"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder={t("eg_subject_ph")}
+                    style={fieldStyle}
+                  />
+                  <datalist id="droussi-subjects">
+                    {SUBJECTS.map((s) => (
+                      <option key={s} value={s} />
+                    ))}
+                  </datalist>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>{isHigherEd ? t("eg_semester") : t("eg_trimester")}</label>
+                  <select
+                    value={trimester === "" ? "" : String(trimester)}
+                    onChange={(e) =>
+                      setTrimester(e.target.value ? (Number(e.target.value) as 1 | 2 | 3) : "")
+                    }
+                    style={fieldStyle}
+                  >
+                    <option value="">{t("eg_term_any")}</option>
+                    <option value="1">{isHigherEd ? t("eg_sem_1") : t("eg_tri_1")}</option>
+                    <option value="2">{isHigherEd ? t("eg_sem_2") : t("eg_tri_2")}</option>
+                    {!isHigherEd && <option value="3">{t("eg_tri_3")}</option>}
+                  </select>
+                </div>
+
+                <div>
+                  <label style={labelStyle}>{t("eg_school_name")}</label>
+                  <input
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                    placeholder={isHigherEd ? t("eg_school_ph_fac") : t("eg_school_ph")}
+                    style={fieldStyle}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>{isHigherEd ? t("eg_teacher_fac") : t("eg_teacher")}</label>
+                  <input
+                    value={teacherName}
+                    onChange={(e) => setTeacherName(e.target.value)}
+                    style={fieldStyle}
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>{t("eg_school_year")}</label>
+                  <input
+                    value={schoolYear}
+                    onChange={(e) => setSchoolYear(e.target.value)}
+                    placeholder="2026-2027"
+                    style={fieldStyle}
+                  />
+                </div>
+              </div>
+            </div>
+
             {/* Settings */}
             <div style={{ backgroundColor: "var(--card)", borderRadius: 24, border: "1px solid var(--border)", padding: 24 }}>
               <h3 style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)", letterSpacing: "-0.02em", marginBottom: 16 }}>{t("eg_settings")}</h3>
               <div className="flex flex-col gap-4">
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>{t("eg_exam_title")}</label>
+                  <label style={labelStyle}>{t("eg_exam_title")}</label>
                   <input
                     value={examTitle}
                     onChange={(e) => setExamTitle(e.target.value)}
-                    style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid var(--border-strong)", backgroundColor: "var(--muted)", fontSize: 13, color: "var(--foreground)", fontFamily: "'Geist','Inter',sans-serif", outline: "none", boxSizing: "border-box" }}
+                    placeholder={t("eg_title_ph")}
+                    style={fieldStyle}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 6 }}>{t("eg_duration")}</label>
-                  <input type="number" value={duration} min={15} max={180} step={5} onChange={(e) => setDuration(+e.target.value)}
-                    style={{ width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid var(--border-strong)", backgroundColor: "var(--muted)", fontSize: 13, color: "var(--foreground)", fontFamily: "'Geist','Inter',sans-serif", outline: "none", boxSizing: "border-box" }} />
+                  <label style={labelStyle}>{t("eg_duration")}</label>
+                  <input type="number" value={duration} min={10} max={360} step={5} onChange={(e) => setDuration(+e.target.value)}
+                    style={fieldStyle} />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 8 }}>{t("eg_difficulty")}</label>
+                  <label style={{ ...labelStyle, marginBottom: 8 }}>{t("eg_difficulty")}</label>
                   <div style={{ display: "flex", gap: 6 }}>
                     {difficultyKeys.map(({ val, label }) => (
-                      <button key={val} onClick={() => setDifficulty(val)}
+                      <button key={val} type="button" onClick={() => setDifficulty(val)}
                         style={{
                           flex: 1, padding: "7px 0", borderRadius: 9999, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
                           backgroundColor: difficulty === val ? "var(--primary)" : "var(--muted)",
@@ -325,15 +558,15 @@ export function ExamGenerator({
                   </div>
                 </div>
 
-                {/* Exam language */}
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 8 }}>{t("eg_language")}</label>
+                  <label style={{ ...labelStyle, marginBottom: 8 }}>{t("eg_language")}</label>
                   <div style={{ display: "flex", gap: 6 }}>
                     {([
-                      { val: "en" as const, label: t("eg_lang_en") },
+                      { val: "ar" as const, label: t("eg_lang_ar") },
                       { val: "fr" as const, label: t("eg_lang_fr") },
+                      { val: "en" as const, label: t("eg_lang_en") },
                     ]).map(({ val, label }) => (
-                      <button key={val} onClick={() => setExamLanguage(val)}
+                      <button key={val} type="button" onClick={() => setExamLanguage(val)}
                         style={{
                           flex: 1, padding: "7px 0", borderRadius: 9999, border: "none", cursor: "pointer", fontSize: 12, fontWeight: 600,
                           backgroundColor: examLanguage === val ? "var(--brand)" : "var(--muted)",
@@ -347,7 +580,7 @@ export function ExamGenerator({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: 12, fontWeight: 600, color: "var(--text-secondary)", display: "block", marginBottom: 8 }}>{t("eg_count")}</label>
+                  <label style={{ ...labelStyle, marginBottom: 8 }}>{t("eg_count")}</label>
                   <div className="grid grid-cols-3 gap-3">
                     {[
                       { label: t("eg_mcq"), value: numMCQ, set: setNumMCQ },
@@ -357,7 +590,7 @@ export function ExamGenerator({
                       <div key={label}>
                         <label style={{ fontSize: 11, fontWeight: 600, color: "var(--muted-foreground)", display: "block", marginBottom: 5, textAlign: "center" }}>{label}</label>
                         <input type="number" value={value} min={0} max={20} onChange={(e) => set(+e.target.value)}
-                          style={{ width: "100%", padding: "7px 10px", borderRadius: 10, border: "1px solid var(--border-strong)", backgroundColor: "var(--muted)", fontSize: 13, color: "var(--foreground)", fontFamily: "'Geist','Inter',sans-serif", outline: "none", boxSizing: "border-box", textAlign: "center" }} />
+                          style={{ ...fieldStyle, textAlign: "center", padding: "7px 10px" }} />
                       </div>
                     ))}
                   </div>

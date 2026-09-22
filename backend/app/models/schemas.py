@@ -2,11 +2,15 @@ from typing import Literal, Optional
 
 from pydantic import BaseModel, Field, field_validator
 
+from ..curriculum.tunisia import ExamType, SchoolLevel, Section
+
 
 Difficulty = Literal["easy", "medium", "hard"]
-QuestionType = Literal["mcq", "open"]
+# "open" is kept for backwards compatibility with existing clients/rows; the
+# finer-grained types let the paper distinguish short answers from essays.
+QuestionType = Literal["mcq", "true_false", "short", "essay", "open"]
 ExportFormat = Literal["pdf", "docx"]
-Language = Literal["en", "fr"]
+Language = Literal["en", "fr", "ar"]
 
 
 class ExamSpec(BaseModel):
@@ -20,6 +24,18 @@ class ExamSpec(BaseModel):
     # Bounded so a client can't inflate the prompt (and thus token cost) with a
     # multi-megabyte string.
     extra_instructions: Optional[str] = Field(default=None, max_length=2000)
+
+    # --- Tunisian school context (all optional; "generic" == no curriculum rules)
+    exam_type: ExamType = "generic"
+    level: Optional[SchoolLevel] = None
+    section: Optional[Section] = None
+    subject: Optional[str] = Field(default=None, max_length=80)
+    trimester: Optional[int] = Field(default=None, ge=1, le=3)
+    duration_minutes: Optional[int] = Field(default=None, ge=10, le=360)
+    # Printed on the paper header only — never sent to the LLM.
+    school_name: Optional[str] = Field(default=None, max_length=120)
+    teacher_name: Optional[str] = Field(default=None, max_length=120)
+    school_year: Optional[str] = Field(default=None, max_length=20)
 
     @field_validator("per_exercise_points")
     @classmethod

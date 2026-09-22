@@ -1,4 +1,6 @@
+import { useLanguage } from "../contexts/LanguageContext";
 import { useUsage } from "../hooks/useUsage";
+import { createT } from "../lib/i18n";
 
 function barColor(percent: number): string {
   if (percent >= 90) return "#f26110";
@@ -11,6 +13,8 @@ function formatResetTime(iso: string): string {
 }
 
 export default function UsageGauge() {
+  const { lang } = useLanguage();
+  const t = createT(lang);
   const { usage, loading, atLimit } = useUsage();
 
   if (loading && !usage) {
@@ -29,6 +33,8 @@ export default function UsageGauge() {
   if (!usage) return null;
 
   const percent = Math.min(100, usage.percent);
+  const resetTime = formatResetTime(usage.resets_at);
+  const title = `${t("usage_exams_today")}: ${usage.exams_used} / ${usage.exams_limit}. ${t("usage_resets_at")} ${resetTime} UTC.`;
 
   return (
     <div
@@ -40,10 +46,10 @@ export default function UsageGauge() {
         minWidth: 160,
         boxShadow: "rgba(4,69,144,0.06) 0px 4px 12px",
       }}
-      title={`Exams today: ${usage.exams_used} / ${usage.exams_limit}. Resets at ${formatResetTime(usage.resets_at)} UTC.`}
+      title={title}
     >
       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11, color: "var(--muted-foreground)" }}>
-        <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>Exams today</span>
+        <span style={{ fontWeight: 600, color: "var(--text-secondary)" }}>{t("usage_exams_today")}</span>
         <span style={{ fontWeight: 600, color: atLimit ? "#f26110" : "var(--text-secondary)", fontVariantNumeric: "tabular-nums" }}>
           {usage.exams_used} / {usage.exams_limit}
         </span>

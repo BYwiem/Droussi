@@ -1,6 +1,16 @@
 export type Difficulty = "easy" | "medium" | "hard";
-export type QuestionType = "mcq" | "open";
+export type QuestionType = "mcq" | "true_false" | "short" | "essay" | "open";
 export type ExportFormat = "pdf" | "docx";
+export type ExamLanguage = "en" | "fr" | "ar";
+
+export type {
+  ExamType,
+  SchoolLevel,
+  Section,
+  EducationCycle,
+} from "./lib/curriculum";
+
+import type { ExamType, SchoolLevel, Section } from "./lib/curriculum";
 
 export interface ExamSpec {
   difficulty: Difficulty;
@@ -9,8 +19,18 @@ export interface ExamSpec {
   total_points: number;
   per_exercise_points: number[];
   export_format: ExportFormat;
-  language?: "en" | "fr";
+  language?: ExamLanguage;
   extra_instructions?: string;
+  // Tunisian context (all optional; omitted == generic exam).
+  exam_type?: ExamType;
+  level?: SchoolLevel;
+  section?: Section;
+  subject?: string;
+  trimester?: 1 | 2 | 3;
+  duration_minutes?: number;
+  school_name?: string;
+  teacher_name?: string;
+  school_year?: string;
 }
 
 export interface DocumentRow {

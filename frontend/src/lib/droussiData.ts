@@ -140,7 +140,14 @@ export function examContentToGenerated(
     createdAt: new Date().toISOString().slice(0, 10),
     questions: content.exercises.map((ex, i) => ({
       id: String(i),
-      type: ex.type === "mcq" ? "mcq" : "short",
+      type:
+        ex.type === "mcq"
+          ? "mcq"
+          : ex.type === "true_false"
+            ? "truefalse"
+            : ex.type === "essay"
+              ? "essay"
+              : "short",
       text: ex.question,
       marks: ex.points,
       options: ex.choices,
@@ -159,13 +166,23 @@ export function buildExamSpec(params: {
   marksEssay?: number;
   exportFormat?: "pdf" | "docx";
   extraInstructions?: string;
-  language?: "en" | "fr";
+  language?: "en" | "fr" | "ar";
+  duration?: number;
+  examType?: ExamSpec["exam_type"];
+  level?: ExamSpec["level"];
+  section?: ExamSpec["section"];
+  subject?: string;
+  trimester?: 1 | 2 | 3;
+  schoolName?: string;
+  teacherName?: string;
+  schoolYear?: string;
 }): ExamSpec {
   const num = Math.max(1, params.numMCQ + params.numShort + params.numEssay);
   const types: ExamSpec["question_types"] = [];
   if (params.numMCQ > 0) types.push("mcq");
-  if (params.numShort + params.numEssay > 0) types.push("open");
-  if (types.length === 0) types.push("mcq", "open");
+  if (params.numShort > 0) types.push("short");
+  if (params.numEssay > 0) types.push("essay");
+  if (types.length === 0) types.push("mcq", "short");
 
   const mMCQ = Math.max(0, params.marksMCQ ?? 4);
   const mShort = Math.max(0, params.marksShort ?? 4);
@@ -182,7 +199,7 @@ export function buildExamSpec(params: {
 
   const total = perExercise.reduce((a, b) => a + b, 0);
 
-  return {
+  const spec: ExamSpec = {
     difficulty: params.difficulty,
     question_types: types,
     num_exercises: num,
@@ -192,6 +209,19 @@ export function buildExamSpec(params: {
     language: params.language ?? "en",
     extra_instructions: params.extraInstructions,
   };
+
+  if (params.duration) spec.duration_minutes = params.duration;
+  if (params.examType && params.examType !== "generic") spec.exam_type = params.examType;
+  else if (params.examType === "generic") spec.exam_type = "generic";
+  if (params.level) spec.level = params.level;
+  if (params.section) spec.section = params.section;
+  if (params.subject?.trim()) spec.subject = params.subject.trim();
+  if (params.trimester) spec.trimester = params.trimester;
+  if (params.schoolName?.trim()) spec.school_name = params.schoolName.trim();
+  if (params.teacherName?.trim()) spec.teacher_name = params.teacherName.trim();
+  if (params.schoolYear?.trim()) spec.school_year = params.schoolYear.trim();
+
+  return spec;
 }
 
 export type ActivityItem = {

@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../../hooks/useAuth";
 import { useUserData } from "../../hooks/useUserData";
 import { useUsage } from "../../hooks/useUsage";
-import { ExamGenerator } from "../../components/droussi/ExamGenerator";
+import { ExamGenerator, type GenerateExamParams } from "../../components/droussi/ExamGenerator";
 import { apiFetch } from "../../lib/api";
 import {
   buildExamSpec,
@@ -57,19 +57,7 @@ export default function ExamRoute() {
 
   if (!user) return null;
 
-  async function handleGenerate(params: {
-    documentIds: string[];
-    examTitle: string;
-    duration: number;
-    numMCQ: number;
-    numShort: number;
-    numEssay: number;
-    marksMCQ: number;
-    marksShort: number;
-    marksEssay: number;
-    difficulty: "easy" | "medium" | "hard";
-    language: "en" | "fr";
-  }): Promise<GeneratedExamView> {
+  async function handleGenerate(params: GenerateExamParams): Promise<GeneratedExamView> {
     if (atLimit) throw new Error("Daily exam limit reached. Try again after midnight UTC.");
     if (!params.documentIds.length) throw new Error("Select at least one source document.");
 
@@ -90,6 +78,15 @@ export default function ExamRoute() {
       marksEssay: params.marksEssay,
       extraInstructions: params.examTitle,
       language: params.language,
+      duration: params.duration,
+      examType: params.examType,
+      level: params.level || undefined,
+      section: params.section || undefined,
+      subject: params.subject || undefined,
+      trimester: params.trimester || undefined,
+      schoolName: params.schoolName || undefined,
+      teacherName: params.teacherName || undefined,
+      schoolYear: params.schoolYear || undefined,
     });
 
     // Start generation in the background, then poll the exam's status. This

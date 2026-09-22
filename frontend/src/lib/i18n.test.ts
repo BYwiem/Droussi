@@ -16,8 +16,14 @@ describe("i18n", () => {
 
   it("translates a key into each language", () => {
     expect(createT("en")("nav_dashboard")).toBe("Dashboard");
-    expect(createT("fr")("nav_dashboard")).toBe("Tableau de bord");
-    expect(createT("ar")("nav_dashboard")).toBe("لوحة التحكم");
+    expect(createT("fr")("nav_dashboard")).toBe("Accueil");
+    expect(createT("ar")("nav_dashboard")).toBe("الرئيسية");
+  });
+
+  it("translates usage gauge labels", () => {
+    expect(createT("en")("usage_exams_today")).toBe("Exams today");
+    expect(createT("fr")("usage_exams_today")).toBe("Examens aujourd'hui");
+    expect(createT("ar")("usage_exams_today")).toBe("اختبارات اليوم");
   });
 
   it("falls back to English for a language missing a key", () => {

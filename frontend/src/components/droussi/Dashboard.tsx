@@ -25,6 +25,8 @@ function formatResetTime(iso: string): string {
 
 /* ── Left of the metrics row: the exams usage gauge, full height ──────── */
 function GaugeCard() {
+  const { lang } = useLanguage();
+  const t = createT(lang);
   const { usage, loading } = useUsage();
 
   const percent = usage ? Math.min(100, usage.percent) : 0;
@@ -47,7 +49,9 @@ function GaugeCard() {
       }}
     >
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-        <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 600, color: "var(--foreground)", letterSpacing: "-0.02em" }}>Exams today</span>
+        <span style={{ fontFamily: "'Inter',sans-serif", fontSize: 14, fontWeight: 600, color: "var(--foreground)", letterSpacing: "-0.02em" }}>
+          {t("usage_exams_today")}
+        </span>
         <div style={{ width: 34, height: 34, borderRadius: 11, backgroundColor: "#f1e6ff", display: "flex", alignItems: "center", justifyContent: "center" }}>
           <Sparkles size={17} color="#9552e0" />
         </div>
@@ -72,8 +76,8 @@ function GaugeCard() {
             </div>
             <p style={{ fontSize: 12, color: "var(--muted-foreground)", fontWeight: 500, marginTop: 10 }}>
               {usage
-                ? `${Math.max(0, usage.remaining)} left · resets at ${formatResetTime(usage.resets_at)}`
-                : "Usage unavailable"}
+                ? `${Math.max(0, usage.remaining)} ${t("usage_left")} · ${t("usage_resets_at")} ${formatResetTime(usage.resets_at)}`
+                : t("usage_unavailable")}
             </p>
           </div>
         </>
